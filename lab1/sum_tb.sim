@@ -1,0 +1,6 @@
+add wave a
+add wave b
+add wave cin
+add wave the_sum
+
+run 40 ns

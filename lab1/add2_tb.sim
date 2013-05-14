@@ -1,0 +1,8 @@
+add wave -radix unsigned -color cyan a
+add wave -radix unsigned -color cyan b
+add wave -color cyan cin
+add wave -radix unsigned -color plum sum
+add wave -color plum cout
+
+run 40 ns
+

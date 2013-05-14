@@ -1,0 +1,7 @@
+TB_ENTITY = sum_tb
+TB_ARCH   = main
+TB_VHDL   = sum_tb.vhd
+
+DESIGN_ENTITY = sum
+DESIGN_ARCH   = main
+DESIGN_VHDL   = sum.vhd
