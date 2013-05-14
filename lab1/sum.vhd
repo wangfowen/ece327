@@ -8,8 +8,8 @@ entity sum is
 end sum;
 
 architecture main of sum is
-	begin
-		o_sum <= i_a xor i_b xor i_cin;
+  begin
+    o_sum <= i_a xor i_b xor i_cin;
 
 end architecture;
 
