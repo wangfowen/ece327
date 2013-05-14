@@ -34,12 +34,14 @@ end architecture;
 
 -- question 2
 -- signal   | waveform description
--- a
--- b
--- cin
--- the_sum  
+-- a		0 1 0
+-- b 		0 0 0
+-- cin		0 0 1
+-- the_sum  	0 1 1
 
 
 -- question 3
-  --insert answer here
+  -- When we run the simulation for 100ns, the testbench is re-iterated, producing the same 
+  -- inputs (and outputs) as were executed in 30 ns.
+  -- The VHDL semantics allow the constant "re-execution" of a process.
 
