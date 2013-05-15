@@ -36,6 +36,13 @@ end main;
 
 -- question 4
 -- signal | output waveform description
+-- a(0) 		0 1 1 0
+-- b(0) 		0 0 1 0
+-- a(1) 		0 1 0 1
+-- b(1) 		0 0 0 1
+-- cin 			0 0 1 1
 -- sum(0)   0 1 1 1
 -- sum(1)   0 1 1 0
 -- cout     0 0 0 1
+
+
