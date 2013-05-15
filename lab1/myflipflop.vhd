@@ -20,10 +20,9 @@ end myflipflop;
 
 architecture main of myflipflop is
 
-  -- define any extra signals here
+	signal intermediate : std_logic := 'U';
 
 begin
-
   basic : process
   begin
       wait until rising_edge(i_clock);
@@ -31,21 +30,39 @@ begin
   end process; 
 
   proc_a : process
-      -- insert code for part (a) here
-  end process;
+	begin
+		wait until rising_edge(i_clock);
+		o_q_a <= (i_d and not(i_reset));
+ 	end process;
 
   proc_b : process
-      -- insert code for part (b) here
-  end process;
+  begin	
+		wait until rising_edge(i_clock);
+		if (i_ce = '1') then
+			o_q_b <= i_d;
+		end if;
+	end process;
 
   proc_c : process
-      -- insert code for part (c) here
+  begin 
+		wait until rising_edge(i_clock);
+		if (i_sel = '0') then
+			o_q_c <= i_d;
+		else
+			o_q_c <= i_d2;
+		end if;
   end process;
 
   proc_d : process
-      -- insert code for part (d) here
-  end process;
+	begin
+		wait until rising_edge(i_clock);
+		if (i_sel = '0') then
+			intermediate <= i_d;
+		else 
+			intermediate <= not(intermediate);
+		end if;
+	end process;
 
-  -- place any extra code or processes here
+	o_q_d <= intermediate;
 
 end architecture;
