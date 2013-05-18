@@ -20,7 +20,7 @@ end myflipflop;
 
 architecture main of myflipflop is
 
-	signal intermediate : std_logic := 'U';
+	signal intermediate : std_logic;
 
 begin
   basic : process
