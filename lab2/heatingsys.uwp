@@ -1,0 +1,8 @@
+TB_ENTITY     = heatingsys_tb
+TB_ARCH       = main
+TB_VHDL       = heatingsys_tb.vhd
+SIM_SCRIPT    = heatingsys_tb.sim
+
+DESIGN_ENTITY = heatingsys
+DESIGN_ARCH   = main
+DESIGN_VHDL   = heatingsys.vhd

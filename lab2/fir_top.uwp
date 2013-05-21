@@ -1,0 +1,8 @@
+BOARD = DE2
+
+DESIGN_ENTITY = fir_top
+DESIGN_ARCH   = main
+
+DESIGN_VHDL   = fir_synth_pkg.vhd fir_lib.vhd fir.vhd fir_top.vhd
+
+PIN_FILE = pins-lab2.tcl
