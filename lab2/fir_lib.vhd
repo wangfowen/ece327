@@ -62,17 +62,17 @@ architecture sample_1024 of sine_wave is
       );
 
   --------------------------------------------------------------
-  
+
   signal clock_count
        , sine_count        : unsigned(20 downto 0);
-  
+
   signal address           : unsigned(9 downto 0);
 
   signal quarter_sine_data
        , sine_data         : word;
-  
+
   --------------------------------------------------------------
-  
+
 begin
 
   process begin
@@ -87,8 +87,8 @@ begin
 
   with address( 9 downto 8 ) select
     sine_data <= quarter_sine_data when "00"
-              , x"7FFF" - quarter_sine_data when "01"   
-              , x"0000" - quarter_sine_data when "10"   
+              , x"7FFF" - quarter_sine_data when "01"
+              , x"0000" - quarter_sine_data when "10"
               , x"8000" + quarter_sine_data when others;
 
   process begin
@@ -105,24 +105,24 @@ end architecture;
 -- freq_scale is increment amount for address into ROM
 
 architecture sample_64 of sine_wave is
-  
+
   --------------------------------------------------------------
-  
+
   constant sine_waveform_map_64 : word_vector( 0 to 63 ) :=
     (
      x"0000", x"0C8C", x"18F9", x"2528", x"30FB", x"3C56", x"471C", x"5133",
      x"5A82", x"62F1", x"6A6D", x"70E2", x"7641", x"7A7C", x"7D89", x"7F61",
      x"7FFF", x"7F61", x"7D89", x"7A7C", x"7641", x"70E2", x"6A6D", x"62F1",
-     x"5A82", x"5133", x"471C", x"3C56", x"30FB", x"2528", x"18F8", x"0C8C", 
+     x"5A82", x"5133", x"471C", x"3C56", x"30FB", x"2528", x"18F8", x"0C8C",
      x"0000", x"F373", x"E706", x"DAD7", x"CF03", x"C3A9", x"B113", x"AECC",
      x"A57D", x"9D0E", x"9592", x"8F1D", x"89BE", x"8583", x"8276", x"809E",
      x"8000", x"809E", x"8276", x"8583", x"89BE", x"8F1D", x"9592", x"9D0E",
      x"A57D", x"AECC", x"B8E3", x"C3A9", x"CF04", x"DAD7", x"E707", x"F373" );
-  
+
   --------------------------------------------------------------
 
   signal address : unsigned( 8 downto 0 );
-  
+
   --------------------------------------------------------------
 
 begin
@@ -135,7 +135,7 @@ begin
   o_data <= sine_waveform_map_64( to_integer( address( 8 downto 3 ) ) )
             sra num_bits_mantissa;
 
-end architecture;  
+end architecture;
 
 ------------------------------------------------------------------------
 -- white noise
@@ -160,9 +160,9 @@ end entity;
 ------------------------------------------------------------------------
 
 architecture main of white_noise is
-  
+
   --------------------------------------------------------------
-  
+
   constant noise_waveform_map : word_vector( 0 to 1023 ) :=
   (
     x"1E00", x"1F00", x"3000", x"1000", x"C200", x"AB00", x"9900",
@@ -319,9 +319,9 @@ architecture main of white_noise is
   signal clock_count       : unsigned(20 downto 0);
 
   signal address           : unsigned( 9 downto 0 );
-  
+
   --------------------------------------------------------------
-  
+
 begin
 
   -- White noise data has 1024 samples
@@ -354,8 +354,8 @@ begin
     o_data      <= noise_waveform_map( to_integer ( address ) )
                    sra num_bits_mantissa;
   end process;
-  
-end architecture;  
+
+end architecture;
 
 ------------------------------------------------------------------------
 -- audio_pll
@@ -382,7 +382,7 @@ architecture main of audio_pll is
   signal sub_wire3 : std_logic;
   signal sub_wire4 : std_logic_vector( 1 downto 0 );
   signal sub_wire5 : std_logic_vector( 0 downto 0 );
-  
+
 begin
 
   sub_wire5 <= b"0";
@@ -396,27 +396,27 @@ begin
   altpll : component altera_mf.altera_mf_components.altpll
     generic map (
         clk1_divide_by         => 3
-      , clk1_phase_shift       => "0"                 
-      , clk0_duty_cycle        => 50                   
-      , lpm_type               => "altpll"                    
-      , clk0_multiply_by       => 14                  
-      , inclk0_input_frequency => 37037         
-      , clk0_divide_by         => 15                    
-      , clk1_duty_cycle        => 50                   
-      , pll_type               => "FAST"                      
-      , clk1_multiply_by       => 2                   
-      , intended_device_family => "Cyclone II"  
-      , operation_mode         => "NORMAL"              
-      , compensate_clock       => "CLK0"               
+      , clk1_phase_shift       => "0"
+      , clk0_duty_cycle        => 50
+      , lpm_type               => "altpll"
+      , clk0_multiply_by       => 14
+      , inclk0_input_frequency => 37037
+      , clk0_divide_by         => 15
+      , clk1_duty_cycle        => 50
+      , pll_type               => "FAST"
+      , clk1_multiply_by       => 2
+      , intended_device_family => "Cyclone II"
+      , operation_mode         => "NORMAL"
+      , compensate_clock       => "CLK0"
       , clk0_phase_shift       => "0"
     )
     port map (
         inclk => sub_wire4
       , clk   => sub_wire0
     );
-        
-end architecture;  
-    
+
+end architecture;
+
 ------------------------------------------------------------------------
 -- audio_dac
 ------------------------------------------------------------------------
@@ -456,8 +456,8 @@ architecture main of audio_dac is
        , x_clock_18_4
        , aud_bck
        : std_logic;
-  
-begin  
+
+begin
 
   p1 : entity work.audio_pll
     port map (
@@ -501,8 +501,8 @@ begin
   clock_18_4 <= x_clock_18_4;
   o_aud_bck  <= aud_bck;
   o_aud_lrck <= lrck_1x;
-  
-end architecture;  
+
+end architecture;
 
 ------------------------------------------------------------------------
 -- derived from I2C_Controller.v by Terasic
@@ -537,15 +537,15 @@ architecture main of i2c_ctrl is
        , ack2
        , ack3
        : std_logic;
-  
+
   signal sd : std_logic_vector( 23 downto 0 );
   signal sd_counter : unsigned( 5 downto 0 );
-  
+
 begin
 
   init_phase <=   '1' when (sd_counter >= 4) and (sd_counter <= 30)
              else '0';
-  
+
   i2c_sclk   <=   sclk or not clock when init_phase = '1'
              else sclk;
 
@@ -630,7 +630,7 @@ begin
   ack <= ack1 or ack2 or ack3;
 
 end architecture;
-      
+
 
 ------------------------------------------------------------------------
 -- I2C configuration for audio
@@ -675,9 +675,9 @@ architecture main of i2c_av_config is
   constant set_video      : unsigned( 5 downto 0 ) := to_unsigned( 10, 6 );
 
   signal reset_n          : std_logic;
-  
+
   signal m_setup_st       : unsigned( 3 downto 0 );
-  
+
   signal lut_index        : unsigned(  5 downto 0 );
   signal lut_data         : unsigned( 15 downto 0 );
 
@@ -689,9 +689,9 @@ architecture main of i2c_av_config is
        , m_i2c_finish_xfr
        , m_i2c_ack
        : std_logic;
-  
+
   signal cont             : unsigned( 15 downto 0 );
-  
+
 begin
 
   process begin
@@ -765,20 +765,20 @@ begin
   end process;
 
   with lut_index select
-    lut_data <= x"001a" when set_lin_l	
-              , x"021a" when set_lin_r	
-              , x"047b" when set_head_l	
-              , x"067b" when set_head_r	
-              , x"08f8" when a_path_ctrl	
-              , x"0a06" when d_path_ctrl	
-              , x"0c00" when power_on	
-              , x"0e01" when set_format	
+    lut_data <= x"001a" when set_lin_l
+              , x"021a" when set_lin_r
+              , x"047b" when set_head_l
+              , x"067b" when set_head_r
+              , x"08f8" when a_path_ctrl
+              , x"0a06" when d_path_ctrl
+              , x"0c00" when power_on
+              , x"0e01" when set_format
               , x"1002" when sample_ctrl  -- 8kHz sample rate
-              , x"1201" when set_active	
+              , x"1201" when set_active
               , x"0000" when others;
-    
+
     --        , x"100c" when sample_ctrl 48 kHz default value
     --        , x"1000" when sample_ctrl 48 kHz w/ 12.288MHz m-clock
-  
-end architecture;    
-    
+
+end architecture;
+

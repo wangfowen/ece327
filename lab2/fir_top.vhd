@@ -17,7 +17,7 @@ use work.fir_synth_pkg.all;
 -- led_grn  10  reset (key 0) push
 -- hex     4..7 sine wave frequency
 ------------------------------------------------------------------------
-   
+
 entity fir_top is
   port(
     ----------------------------------------------------
@@ -33,7 +33,7 @@ entity fir_top is
     hex2,
     hex3,
     hex4,
-    hex5,  
+    hex5,
     hex6,
     hex7        : out   std_logic_vector(6 downto 0);     -- hex display
     ----------------------------------------------------
@@ -50,15 +50,15 @@ entity fir_top is
 end entity;
 
 architecture main of fir_top is
-  
+
   --------------------------------------------------------------
 
   constant use_clock_50    : boolean := false;
   constant use_sample_1024 : boolean := false;
-  
+
   --------------------------------------------------------------
   -- sine wave frequency selection and display
-  
+
   signal display_freq      : std_logic_vector( 15 downto 0 );
   signal sine_freq         : unsigned(6 downto 0);
 
@@ -69,7 +69,7 @@ architecture main of fir_top is
        , noise_data
        , audio_out
        : word;
-  
+
   --------------------------------------------------------------
   -- audio chip signals
 
@@ -80,9 +80,9 @@ architecture main of fir_top is
        , data_clk
        , noise_clk
        : std_logic;
-  
+
   signal serial_audio_out : std_logic;
-  
+
 begin
 
   --------------------------------------------------------------
@@ -102,23 +102,29 @@ begin
       use_clock_50  => false
     )
     port map (
-      clk    => data_clk,   
+      clk    => data_clk,
       o_data => noise_data
     );
-      
+
   --------------------------------------------------------------
   -- core
 
   process begin
     wait until rising_edge( data_clk );
-    audio_out <= sine_data;
+    if sw(17) = '0' then
+      -- sine wave generator as input
+      audio_out <= sine_data;
+    else
+      -- white noise generator as input
+      audio_out <= noise_data;
+    end if;
   end process;
-  
+
   --------------------------------------------------------------
   -- outputs
 
   ----------------------------------------------------
-  
+
   display_freq <= frequency_map( to_integer ( sine_freq ) );
 
   hex7 <= to_sevenseg( unsigned(display_freq(15 downto 12)) );
@@ -130,35 +136,35 @@ begin
   hex2 <= (others => 'Z');
   hex1 <= (others => 'Z');
   hex0 <= (others => 'Z');
-  
+
   ----------------------------------------------------
   -- serial output for audio
-  
+
   -- Generate the audio stream bit to send to the CODEC
   -- Note that the CODEC supports stereo but all processing is mono
 
   sample_bit_clk: process (aud_bclk)
   begin
     if rising_edge(aud_bclk) then
-      -- increment bit to send on the clock      
+      -- increment bit to send on the clock
       bit_position <= bit_position + 1;
     end if;
   end process;
-    
+
   serial_audio_out <= audio_out(to_integer(15 - bit_position));
-  
+
   aud_dacdat       <= serial_audio_out;
-  
+
   --------------------------------------------------------------
   -- audio peripheral
   --
-  
+
   ----------------------------------------------------
   -- provide clocks to ADC and DAC and bit clock for serial data
   aud_adclrck <= data_clk;
   aud_daclrck <= data_clk;
   aud_xck     <= aud_ctrl_clk;
-  
+
   u_audio_dac : entity work.audio_dac port map
     (
         clock_27    => clock_27          -- 27 MHz clock
@@ -167,7 +173,7 @@ begin
       , o_aud_bck     => aud_bclk
       , o_aud_lrck    => data_clk          --  Audio Side
     );
-  
+
   --------------------------------------------------------------
   -- I2C communications to the CODEC
   --
@@ -178,6 +184,5 @@ begin
       , i2c_sdat => i2c_sdat
     );
   --------------------------------------------------------------
-  
 end architecture;
-  
+

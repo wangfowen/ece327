@@ -27,7 +27,7 @@ architecture avg of fir is
   constant coef2 : word := x"0400";
   constant coef3 : word := x"0400";
   constant coef4 : word := x"0400";
-  
+
 begin
 
   -- delay line of flops to hold samples of input data
@@ -41,7 +41,7 @@ begin
       tap4 <= tap3;
     end if;
   end process;
-  
+
   -- simple averaging circuit
   --
   prod1 <= mult( tap1, coef1);
@@ -52,7 +52,7 @@ begin
   sum2  <= prod1 + prod2;
   sum3  <= sum2  + prod3;
   sum4  <= sum3  + prod4;
-  
+
   o_data <= sum4;
 
 end architecture;
@@ -65,15 +65,15 @@ architecture low_pass of fir is
 
   -- Use the signal names tap, prod, and sum, but change the type to
   -- match your needs.
-  
+
   signal tap, prod, sum : std_logic;
-  
+
   -- The attribute line below is usually needed to avoid a warning
   -- from PrecisionRTL that signals could be implemented using
-  -- memory arrays.  
+  -- memory arrays.
 
   attribute logic_block of tap, prod, sum : signal is true;
-  
+
 begin
 
 end architecture;
