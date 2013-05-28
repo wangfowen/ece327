@@ -109,39 +109,27 @@ begin
   --------------------------------------------------------------
   -- core
 
-  process begin
-    wait until rising_edge( data_clk );
+  --input multiplexer
+  audio_out <=   sine_data when sw(17) = '0'
+            else noise_data;
 
-    --input multiplexer
-    if sw(17) = '0' then
-      -- sine wave generator as input
-      audio_out <= sine_data;
-
-      display_freq <= frequency_map( to_integer ( sine_freq ) );
-      hex7 <= to_sevenseg( unsigned(display_freq(15 downto 12)) );
-      hex6 <= to_sevenseg( unsigned(display_freq(11 downto  8)) );
-      hex5 <= to_sevenseg( unsigned(display_freq( 7 downto  4)) );
-      hex4 <= to_sevenseg( unsigned(display_freq( 3 downto  0)) );
-    else
-      -- white noise generator as input
-      audio_out <= noise_data;
-
-      --show x015E on hex display
-      hex7 <= to_sevenseg( X"0" );
-      hex6 <= to_sevenseg( X"1" );
-      hex5 <= to_sevenseg( X"5" );
-      hex4 <= to_sevenseg( X"E" );
-    end if;
-
-    -- pass through the fir
-
-    --output multiplexer
-  end process;
-
+  display_freq <= frequency_map( to_integer ( sine_freq ) );
+  hex7 <=   to_sevenseg( unsigned(display_freq(15 downto 12)) ) when sw(17) = '0'
+       else to_sevenseg( X"0" );
+  hex6 <=   to_sevenseg( unsigned(display_freq(11 downto 8)) ) when sw(17) = '0'
+       else to_sevenseg( X"1" );
+  hex5 <=   to_sevenseg( unsigned(display_freq(7 downto 4)) ) when sw(17) = '0'
+       else to_sevenseg( X"5" );
+  hex4 <=   to_sevenseg( unsigned(display_freq(3 downto 0)) ) when sw(17) = '0'
+       else to_sevenseg( X"E" );
   hex3 <= (others => 'Z');
   hex2 <= (others => 'Z');
   hex1 <= (others => 'Z');
   hex0 <= (others => 'Z');
+
+  -- pass through the fir
+
+  --output multiplexer
 
   ----------------------------------------------------
   -- serial output for audio
