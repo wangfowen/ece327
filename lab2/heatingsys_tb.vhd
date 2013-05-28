@@ -98,7 +98,7 @@ begin
 
 		-- Test reset from HIGH state
 		cur_temp <= to_signed(0,8); des_temp <= to_signed(9,8) ; reset <= '1';
-		wait for 100 ns;		
+		wait for 400 ns;		
 
 	end process;
 end architecture;
