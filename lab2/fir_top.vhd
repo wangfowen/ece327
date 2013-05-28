@@ -69,7 +69,7 @@ architecture main of fir_top is
        , noise_data
        , audio_out
        , temp
-       , audio_mux_out
+       , audio_in
        : word;
 
   --------------------------------------------------------------
@@ -112,7 +112,7 @@ begin
   -- core
 
   --input multiplexer
-  audio_out <=   sine_data when sw(17) = '0'
+  audio_in <=   sine_data when sw(17) = '0'
             else noise_data;
 
   display_freq <= frequency_map( to_integer ( sine_freq ) );
@@ -133,13 +133,13 @@ begin
   fir : entity work.fir(avg)
     port map (
       clk     => data_clk,
-      i_data  => audio_out,
+      i_data  => audio_in,
       o_data  => temp
     );
 
   --output multiplexer
-  audio_mux_out <=  temp when sw(16) = '1'
-            else  audio_out;
+  audio_out <=  temp when sw(16) = '1'
+            else  audio_in;
 
   ----------------------------------------------------
   -- serial output for audio
