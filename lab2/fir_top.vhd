@@ -68,6 +68,7 @@ architecture main of fir_top is
   signal sine_data
        , noise_data
        , audio_out
+       , temp
        : word;
 
   --------------------------------------------------------------
@@ -128,8 +129,16 @@ begin
   hex0 <= (others => 'Z');
 
   -- pass through the fir
+  fir : entity work.fir(avg)
+    port map (
+      clk     => data_clk,
+      i_data  => audio_out,
+      o_data  => temp
+    );
 
   --output multiplexer
+  audio_out <=    temp when sw(16) = '1'
+            else  audio_out;
 
   ----------------------------------------------------
   -- serial output for audio
