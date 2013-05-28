@@ -111,26 +111,32 @@ begin
 
   process begin
     wait until rising_edge( data_clk );
+
+    --input multiplexer
     if sw(17) = '0' then
       -- sine wave generator as input
       audio_out <= sine_data;
+
+      display_freq <= frequency_map( to_integer ( sine_freq ) );
+      hex7 <= to_sevenseg( unsigned(display_freq(15 downto 12)) );
+      hex6 <= to_sevenseg( unsigned(display_freq(11 downto  8)) );
+      hex5 <= to_sevenseg( unsigned(display_freq( 7 downto  4)) );
+      hex4 <= to_sevenseg( unsigned(display_freq( 3 downto  0)) );
     else
       -- white noise generator as input
       audio_out <= noise_data;
+
+      --show x015E on hex display
+      hex7 <= to_sevenseg( X"0" );
+      hex6 <= to_sevenseg( X"1" );
+      hex5 <= to_sevenseg( X"5" );
+      hex4 <= to_sevenseg( X"E" );
     end if;
+
+    -- pass through the fir
+
+    --output multiplexer
   end process;
-
-  --------------------------------------------------------------
-  -- outputs
-
-  ----------------------------------------------------
-
-  display_freq <= frequency_map( to_integer ( sine_freq ) );
-
-  hex7 <= to_sevenseg( unsigned(display_freq(15 downto 12)) );
-  hex6 <= to_sevenseg( unsigned(display_freq(11 downto  8)) );
-  hex5 <= to_sevenseg( unsigned(display_freq( 7 downto  4)) );
-  hex4 <= to_sevenseg( unsigned(display_freq( 3 downto  0)) );
 
   hex3 <= (others => 'Z');
   hex2 <= (others => 'Z');
