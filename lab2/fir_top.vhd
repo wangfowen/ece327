@@ -69,6 +69,7 @@ architecture main of fir_top is
        , noise_data
        , audio_out
        , temp
+       , audio_mux_out
        : word;
 
   --------------------------------------------------------------
@@ -137,7 +138,7 @@ begin
     );
 
   --output multiplexer
-  audio_out <=    temp when sw(16) = '1'
+  audio_mux_out <=  temp when sw(16) = '1'
             else  audio_out;
 
   ----------------------------------------------------
