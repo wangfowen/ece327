@@ -39,18 +39,26 @@ begin
 	test : process
 	begin
 		-- Wait for steady-state output
-		wait for 10 ns;
-		in_data <= x"0000";
-		wait for 80 ns;
+		wait until rising_edge(clock);
+    in_data <= x"0000";
+		wait until rising_edge(clock);
+		wait until rising_edge(clock);
+		wait until rising_edge(clock);
+		wait until rising_edge(clock);
     
     -- Step!
     in_data <= x"1000";
-    wait for 20 ns;
 
     -- Back to 0
+		wait until rising_edge(clock);
     in_data <= x"0000";
-    wait for 200 ns;
-	end process;
+		wait until rising_edge(clock);
+		wait until rising_edge(clock);
+		wait until rising_edge(clock);
+		wait until rising_edge(clock);
+	 
+    wait for 100 ns;
+  end process;
   
 end architecture;
 ------------------------------------------------------------------------

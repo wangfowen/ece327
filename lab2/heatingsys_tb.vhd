@@ -40,63 +40,65 @@ begin
   process
   begin
     -- Wait for output state to change from undefined to off state
-    wait for 10 ns;
+    wait until rising_edge(clock);
     cur_temp <= to_signed(0,8); des_temp <= to_signed(0,8) ; reset <= '0';
-    wait for 40 ns;
 
     -- Test OFF state (no change)
+    wait until rising_edge(clock);
     cur_temp <= to_signed(-1,8); des_temp <= to_signed(1,8) ; reset <= '0';
-    wait for 40 ns;
 
     -- Test OFF-->LOW
+    wait until rising_edge(clock);
     cur_temp <= to_signed(-1,8); des_temp <= to_signed(2,8) ; reset <= '0';
-    wait for 40 ns;
 
     -- Test LOW state (no change)
+    wait until rising_edge(clock);
     cur_temp <= to_signed(1,8); des_temp <= to_signed(3,8) ; reset <= '0';
-    wait for 40 ns;
 
     -- Test LOW-->OFF
+    wait until rising_edge(clock);
     cur_temp <= to_signed(3,8); des_temp <= to_signed(4,8) ; reset <= '0';
-    wait for 40 ns;
 
     -- Test OFF-->HIGH
+    wait until rising_edge(clock);
     cur_temp <= to_signed(0,8); des_temp <= to_signed(5,8) ; reset <= '0';
-    wait for 40 ns;
 
     -- Test HIGH state (no change)
+    wait until rising_edge(clock);
     cur_temp <= to_signed(3,8); des_temp <= to_signed(6,8) ; reset <= '0';
-    wait for 40 ns;
 
     -- Test HIGH-->LOW-->OFF
+    -- wait two clock cycles
+    wait until rising_edge(clock);
     cur_temp <= to_signed(7,8); des_temp <= to_signed(7,8) ; reset <= '0';
-    wait for 80 ns;
+    wait until rising_edge(clock);
 
     -- Test OFF-->LOW
+    wait until rising_edge(clock);
     cur_temp <= to_signed(4,8); des_temp <= to_signed(8,8) ; reset <= '0';
-    wait for 40 ns;
 
     -- Test LOW-->HIGH
+    wait until rising_edge(clock);
     cur_temp <= to_signed(2,8); des_temp <= to_signed(9,8) ; reset <= '0';
-    wait for 40 ns;
 
     -- Test reset from OFF state
+    wait until rising_edge(clock);
     cur_temp <= to_signed(5,8); des_temp <= to_signed(9,8) ; reset <= '1';
-    wait for 40 ns;
 
     -- Test OFF-->LOW
+    wait until rising_edge(clock);
     cur_temp <= to_signed(5,8); des_temp <= to_signed(9,8) ; reset <= '0';
-    wait for 40 ns;
 
     -- Test reset from LOW state
+    wait until rising_edge(clock);
     cur_temp <= to_signed(5,8); des_temp <= to_signed(9,8) ; reset <= '1';
-    wait for 40 ns;
 
     -- Test OFF-->HIGH
+    wait until rising_edge(clock);
     cur_temp <= to_signed(0,8); des_temp <= to_signed(9,8) ; reset <= '1';
-    wait for 40 ns;
 
     -- Test reset from HIGH state
+    wait until rising_edge(clock);
     cur_temp <= to_signed(0,8); des_temp <= to_signed(9,8) ; reset <= '1';
     wait for 400 ns;
 
