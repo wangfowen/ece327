@@ -79,7 +79,12 @@ begin
 end architecture;
 
 -- question 2
-  -- insert your answer here
+  -- The number of LUTS needed for a 16-bit adder is 16, because the carry of an LE in the FPGA must be used.
+  -- By systematically removing adders in the fir(avg) design, we can see this to be true.
+  -- There are 16 LUTS used for an adder except for the first sum2 adder, to which there is an optimization down to 15 LUTS.
 
 -- question 3
-  -- insert your answer here
+  -- For multplication of constants, we can see that the multiplier uses no LUTS. This makes sense
+  -- because we can simply shift (multiply by a factor of 2) by moving wires.
+  -- If we were multiplying the input by itself, then we would use an FPGA DSP, which is seen when this is tested.
+  -- This also makes sense, since there are no optimizations on constants that can be done.
