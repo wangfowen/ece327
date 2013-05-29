@@ -3,5 +3,5 @@ add wave clock
 add wave in_data
 add wave out_data
 
-run 300 ns
+run 800 ns
 

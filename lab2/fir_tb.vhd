@@ -20,7 +20,7 @@ architecture main of fir_tb is
 
 begin
 
-		averager : entity work.fir(avg)
+		averager : entity work.fir(low_pass)
 		port map (
 			o_data				=> out_data,
 			i_data				=> in_data,
@@ -41,23 +41,23 @@ begin
 		-- Wait for steady-state output
 		wait until rising_edge(clock);
     in_data <= x"0000";
-		wait until rising_edge(clock);
-		wait until rising_edge(clock);
-		wait until rising_edge(clock);
-		wait until rising_edge(clock);
-    
+		
+    for i in 1 to num_taps loop
+      wait until rising_edge(clock);
+    end loop;
+      
     -- Step!
     in_data <= x"1000";
 
     -- Back to 0
 		wait until rising_edge(clock);
     in_data <= x"0000";
-		wait until rising_edge(clock);
-		wait until rising_edge(clock);
-		wait until rising_edge(clock);
-		wait until rising_edge(clock);
 	 
-    wait for 100 ns;
+    for i in 1 to num_taps loop
+      wait until rising_edge(clock);
+    end loop;
+    
+    wait for 200 ns;
   end process;
   
 end architecture;

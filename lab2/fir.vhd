@@ -66,7 +66,9 @@ architecture low_pass of fir is
   -- Use the signal names tap, prod, and sum, but change the type to
   -- match your needs.
 
-  signal tap, prod, sum : std_logic;
+  signal tap  : word_vector(num_taps downto 0);
+  signal prod : word_vector(num_taps downto 1);
+  signal sum  : word_vector(num_taps downto 2);
 
   -- The attribute line below is usually needed to avoid a warning
   -- from PrecisionRTL that signals could be implemented using
@@ -75,6 +77,26 @@ architecture low_pass of fir is
   attribute logic_block of tap, prod, sum : signal is true;
 
 begin
+  
+  -- delay line of flops to hold samples of input data
+  tap(0) <= i_data;
+  HW_CPY: for I in 1 to num_taps generate
+    delay_line : process(clk)
+    begin
+      if (rising_edge(clk)) then
+        tap(I) <= tap(I-1);
+      end if;
+    end process;
+    prod(I) <= mult( tap(I), lpcoef(I));
+  end generate HW_CPY;
+ 
+  sum(2) <= prod(1) + prod(2);
+
+  SUM_CPY: for I in 3 to num_taps generate
+    sum(I) <= sum(I-1) + prod(I);
+  end generate SUM_CPY;
+  
+  o_data <= sum(num_taps);
 
 end architecture;
 

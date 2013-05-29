@@ -130,7 +130,7 @@ begin
   hex0 <= (others => 'Z');
 
   -- pass through the fir
-  fir : entity work.fir(avg)
+  fir : entity work.fir(low_pass)
     port map (
       clk     => data_clk,
       i_data  => audio_in,
