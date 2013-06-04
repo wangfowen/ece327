@@ -17,9 +17,9 @@ architecture main of lab3 is
   signal calculation : signed(9 downto 0);
   signal row_counter : unsigned(3 downto 0) := to_unsigned(0, 4);
   signal column_counter : unsigned(3 downto 0) := to_unsigned(0, 4);
-  signal a : unsigned(7 downto 0);
-  signal b : unsigned(7 downto 0);
-  signal c : unsigned(7 downto 0);
+  signal a : unsigned(9 downto 0);
+  signal b : unsigned(9 downto 0);
+  signal c : unsigned(9 downto 0);
 
    -- A function to rotate left (rol) a vector by n bits
   function "rol" ( a : std_logic_vector; n : natural )
@@ -29,6 +29,10 @@ architecture main of lab3 is
       return std_logic_vector( unsigned(a) rol n );
   end function;
 begin
+  a <= unsigned("00" & i_input);
+  b <= to_unsigned(100, 10);
+  c <= a;
+  
   calc : process
   begin
     wait until rising_edge(i_clock);
@@ -38,10 +42,8 @@ begin
   -- clear matrix, set state to 000, counter to 0x00
 
   -- when i_valid is 1:
+  -- TODO: Test corner cases 255 + 255 and -255
     if i_valid = '1' then
-      a <= unsigned(i_input);
-      b <= unsigned(i_input);
-      c <= unsigned(i_input);
       calculation <= signed( a - b + c );
       if calculation >= 0 then
         count <= count + 1;
