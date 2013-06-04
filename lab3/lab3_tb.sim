@@ -1,0 +1,34 @@
+#------------------------------------------------------
+add wave sim:/lab3_tb/clock
+add wave sim:/lab3_tb/in_valid
+add wave sim:/lab3_tb/in_input
+add wave sim:/lab3_tb/reset
+#------------------------------------------------------
+# when in --prog mode, use "1" in condition below
+# when in --chip or --time mode, use "0" in condition
+#
+if { 1 } then {
+  #------------------------------------------
+  # signals that are traced in --prog mode 
+  #
+  # add wave -color "cornflower blue" -radix unsigned sim:/lab3_tb/uut/eject
+  # add wave -color "coral" -radix decimal sim:/lab3_tb/uut/erase
+  # add wave -color "slate blue" sim:/lab3_tb/uut/evacuate
+  #------------------------------------------
+} else {
+  #------------------------------------------
+  # signals that are traced in --chip and --time mode
+  #------------------------------------------
+}
+#------------------------------------------------------
+# additional signals that are traced in all modes
+#
+add wave -color "blue2" -radix unsigned sim:/lab3_tb/out_output
+
+#------------------------------------------------------
+# run and exit
+#
+# run 2800 ns
+run 21000 ns
+# exit -f
+ 

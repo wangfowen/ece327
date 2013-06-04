@@ -1,0 +1,8 @@
+TB_ENTITY = lab3_tb
+TB_ARCH = main
+TB_VHDL = lab3_tb.vhd
+SIM_SCRIPT = lab3_tb.sim
+
+DESIGN_ENTITY = top_lab3
+DESIGN_ARCH = main
+DESIGN_VHDL = mem.vhd lab3.vhd lib_lab3.vhd top_lab3.vhd
