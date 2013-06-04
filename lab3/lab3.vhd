@@ -24,6 +24,16 @@ begin
     return std_logic_vector( unsigned(a) rol n );
 end function;
 
+-- when push button 0 is pressed and before each matrix set, set reset to 1
+
+-- if reset is 1:
+-- clear matrix, set state to 000, counter to 0x00
+
+-- when i_valid is 1:
+-- store data in matrix
+-- if it's after row 2 column 0, also do calculation and increment count
+-- put count on seven segment display
+
 end architecture main;
 
 -- Q1: number of flip flops and lookup tables?
