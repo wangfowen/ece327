@@ -28,11 +28,22 @@ architecture main of lab3 is
   begin
       return std_logic_vector( unsigned(a) rol n );
   end function;
+
 begin
+  -- TODO: declare address, data, q
+  mem : entity work.mem(main)
+    port map (
+      address => address,
+      i_clock => clock,
+      data => data,
+      i_valid => wren,
+      q => q
+    );
+
   a <= unsigned("00" & i_input);
   b <= to_unsigned(100, 10);
   c <= a;
-  
+
   calc : process
   begin
     wait until rising_edge(i_clock);
