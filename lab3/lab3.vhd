@@ -13,13 +13,22 @@ entity lab3 is
 end entity lab3;
 
 architecture main of lab3 is
-  signal count : unsigned(7 downto 0) := to_unsigned(0, 8);
+  signal count : unsigned(7 downto 0);
   signal calculation : signed(9 downto 0);
-  signal row_counter : unsigned(3 downto 0) := to_unsigned(0, 4);
-  signal column_counter : unsigned(3 downto 0) := to_unsigned(0, 4);
-  signal address : std_logic_vector(3 downto 0);
-  signal data
-       , q : std_logic_vector(7 downto 0);
+  signal row_counter : unsigned(3 downto 0);
+  signal row_index : unsigned(3 downto 0);
+  signal column_counter : unsigned(3 downto 0);
+  signal address1
+       , address2
+       , address3
+       : std_logic_vector(3 downto 0);
+  signal data1
+       , data2
+       , data3
+       , q1
+       , q2
+       , q3
+       : std_logic_vector(7 downto 0);
   signal a
        , b
        , c
@@ -34,20 +43,37 @@ architecture main of lab3 is
   end function;
 
 begin
-  mem : entity work.mem(main)
+  mem1 : entity work.mem(main)
     port map (
-      address => address,
+      address => address1,
       clock => i_clock,
-      data => data,
+      data => data1,
       wren => i_valid,
-      q => q
+      q => q1
+    );
+  mem2 : entity work.mem(main)
+    port map (
+      address => address2,
+      clock => i_clock,
+      data => data2,
+      wren => i_valid,
+      q => q2
+    );
+  mem3 : entity work.mem(main)
+    port map (
+      address => address3,
+      clock => i_clock,
+      data => data3,
+      wren => i_valid,
+      q => q3
     );
 
+  -- TODO: make these what they actually should be
   a <= unsigned("00" & i_input);
   b <= to_unsigned(100, 10);
   c <= a;
 
-  calc : process
+  do_calculation : process
   begin
     wait until rising_edge(i_clock);
   -- when push button 0 is pressed and before each matrix set, set reset to 1
@@ -55,26 +81,34 @@ begin
   -- if reset is 1:
   -- clear matrix, set state to 000, counter to 0x00
 
-  -- when i_valid is 1:
   -- TODO: Test corner cases 255 + 255 and -255
+    -- address of row_index's mem is column_counter
+    -- set data of row_index's mem to be i_input
+    -- grab q from row_index's mem
+    -- TODO: change system to work with valid bit states
     if i_valid = '1' then
-      data <= i_input;
-      address <= std_logic_vector(column_counter);
+      data1 <= i_input;
+      address1 <= std_logic_vector(column_counter);
+      -- TODO: if it's after row 2 column 0, also do calculation
       calculation <= signed( a - b + c );
       if calculation >= 0 then
         count <= count + 1;
       end if;
-
-      wait until rising_edge(i_clock);
-
-      column_counter <= column_counter + 1;
     end if;
-  -- store data in matrix
-  -- if it's after row 2 column 0, also do calculation and increment count
-  -- put count on seven segment display
   end process;
 
-  o_output <= q;
+  increment_counters : process
+  begin
+    wait until rising_edge(i_clock);
+
+    if i_valid = '1' then
+      column_counter <= column_counter + 1;
+      -- TODO: mod through column_counter 
+      -- TODO: when hit max of column_counter mod through row_index and increment row_counter if it's < 15
+    end if;
+  end process;
+
+  o_output <= q1;
 end architecture main;
 
 -- Q1: number of flip flops and lookup tables?
