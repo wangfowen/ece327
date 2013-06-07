@@ -17,9 +17,13 @@ architecture main of lab3 is
   signal calculation : signed(9 downto 0);
   signal row_counter : unsigned(3 downto 0) := to_unsigned(0, 4);
   signal column_counter : unsigned(3 downto 0) := to_unsigned(0, 4);
-  signal a : unsigned(9 downto 0);
-  signal b : unsigned(9 downto 0);
-  signal c : unsigned(9 downto 0);
+  signal address : std_logic_vector(3 downto 0);
+  signal data
+       , q : std_logic_vector(7 downto 0);
+  signal a
+       , b
+       , c
+       : unsigned(9 downto 0);
 
    -- A function to rotate left (rol) a vector by n bits
   function "rol" ( a : std_logic_vector; n : natural )
@@ -30,13 +34,12 @@ architecture main of lab3 is
   end function;
 
 begin
-  -- TODO: declare address, data, q
   mem : entity work.mem(main)
     port map (
       address => address,
-      i_clock => clock,
+      clock => i_clock,
       data => data,
-      i_valid => wren,
+      wren => i_valid,
       q => q
     );
 
@@ -55,17 +58,23 @@ begin
   -- when i_valid is 1:
   -- TODO: Test corner cases 255 + 255 and -255
     if i_valid = '1' then
+      data <= i_input;
+      address <= std_logic_vector(column_counter);
       calculation <= signed( a - b + c );
       if calculation >= 0 then
         count <= count + 1;
       end if;
+
+      wait until rising_edge(i_clock);
+
+      column_counter <= column_counter + 1;
     end if;
   -- store data in matrix
   -- if it's after row 2 column 0, also do calculation and increment count
   -- put count on seven segment display
   end process;
 
-  o_output <= std_logic_vector(count);
+  o_output <= q;
 end architecture main;
 
 -- Q1: number of flip flops and lookup tables?
