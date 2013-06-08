@@ -1,6 +1,17 @@
 library ieee;
 use ieee.std_logic_1164.all;
+
+package state_pkg is
+  subtype state_ty is std_logic_vector(2 downto 0);
+  constant S0 : state_ty := "001";
+  constant S1 : state_ty := "010";
+  constant S2 : state_ty := "100";
+end state_pkg;
+
+library ieee;
+use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.state_pkg.all;
 
 entity lab3 is
   port (
@@ -16,7 +27,7 @@ architecture main of lab3 is
   signal count : unsigned(7 downto 0);
   signal calculation : signed(9 downto 0);
   signal row_counter : unsigned(3 downto 0);
-  signal row_index : unsigned(3 downto 0);
+  signal row_index : unsigned(1 downto 0);
   signal column_counter : unsigned(3 downto 0);
   signal address1
        , address2
@@ -33,6 +44,7 @@ architecture main of lab3 is
        , b
        , c
        : unsigned(9 downto 0);
+  signal state : state_ty;
 
    -- A function to rotate left (rol) a vector by n bits
   function "rol" ( a : std_logic_vector; n : natural )
@@ -68,31 +80,40 @@ begin
       q => q3
     );
 
-  -- TODO: make these what they actually should be
-  a <= unsigned("00" & i_input);
-  b <= to_unsigned(100, 10);
-  c <= a;
-
-  do_calculation : process
+  set_state : process
   begin
     wait until rising_edge(i_clock);
-  -- when push button 0 is pressed and before each matrix set, set reset to 1
+    -- TODO: state 0 if push button 0 pressed also
+    if (row_counter = 0 and column_counter = 0) then
+      state <= S0;
+    end if;
 
-  -- if reset is 1:
-  -- clear matrix, set state to 000, counter to 0x00
-
+    if (i_valid = '1' and row_counter = 0 and column_counter = 0) then
+      -- state 1
+      state <= state rol 1;
+    elsif (i_valid = '1' and row_counter = 2 and column_counter = 0) then
+      --state 2
+      state <= state rol 1;
+    end if;
+  end process;
+  store_input : process
+  begin
+    wait until rising_edge(i_clock);
   -- TODO: Test corner cases 255 + 255 and -255
-    -- address of row_index's mem is column_counter
-    -- set data of row_index's mem to be i_input
-    -- grab q from row_index's mem
     -- TODO: change system to work with valid bit states
-    if i_valid = '1' then
+    if (i_valid = '1' and (state(1) or state(2)) = '1') then
+      -- TODO: how decide which data/address to use?
+      -- address of row_index's mem is column_counter
+      -- set data of row_index's mem to be i_input
+      -- grab q from row_index's mem
       data1 <= i_input;
       address1 <= std_logic_vector(column_counter);
-      -- TODO: if it's after row 2 column 0, also do calculation
-      calculation <= signed( a - b + c );
-      if calculation >= 0 then
-        count <= count + 1;
+
+      if (state(2) = '1') then
+        a <= unsigned("00" & i_input);
+        b <= to_unsigned(100, 10);
+        c <= a;
+        calculation <= signed( a - b + c );
       end if;
     end if;
   end process;
@@ -101,10 +122,23 @@ begin
   begin
     wait until rising_edge(i_clock);
 
-    if i_valid = '1' then
-      column_counter <= column_counter + 1;
-      -- TODO: mod through column_counter 
-      -- TODO: when hit max of column_counter mod through row_index and increment row_counter if it's < 15
+    if (i_valid = '1' and (state(1) or state(2)) = '1') then
+      if (column_counter = 15) then
+        column_counter <= to_unsigned(0, 4);
+        row_counter <= row_counter + 1;
+        row_index <= row_index rol 1;
+      else
+        column_counter <= column_counter + 1;
+      end if;
+
+      if (state(2) = '1' and calculation >= 0) then
+        count <= count + 1;
+      end if;
+    elsif (state(0) = '1') then
+      column_counter <= to_unsigned(0, 4);
+      row_counter <= to_unsigned(0, 4);
+      row_index <= to_unsigned(0, 2);
+      count <= to_unsigned(0, 8);
     end if;
   end process;
 
