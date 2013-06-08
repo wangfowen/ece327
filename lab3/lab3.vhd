@@ -45,7 +45,7 @@ architecture main of lab3 is
        : unsigned(9 downto 0);
   signal state : state_ty;
   signal row_index : state_ty;
-  signal valid_sig_no_reset;
+  signal valid_sig_no_reset : boolean;
 
    -- A function to rotate left (rol) a vector by n bits
   function "rol" ( a : std_logic_vector; n : natural )
@@ -57,7 +57,7 @@ architecture main of lab3 is
 
 begin
 
-  valid_sig_no_reset <= state(0) = '0' and i_valid = '1';
+  valid_sig_no_reset <= (state(0) = '0') and (i_valid = '1');
 
   mem1 : entity work.mem(main)
     port map (
@@ -131,7 +131,7 @@ begin
   begin
     wait until rising_edge(i_clock);
     
-    if valid_sig_no_reset = '1' then
+    if valid_sig_no_reset then
       if (column_counter = 15) then
         column_counter <= to_unsigned(0, 4);
         row_counter <= row_counter + 1;
