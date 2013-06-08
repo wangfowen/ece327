@@ -45,6 +45,7 @@ architecture main of lab3 is
        : unsigned(9 downto 0);
   signal state : state_ty;
   signal row_index : state_ty;
+  signal valid_sig_no_reset;
 
    -- A function to rotate left (rol) a vector by n bits
   function "rol" ( a : std_logic_vector; n : natural )
@@ -55,6 +56,9 @@ architecture main of lab3 is
   end function;
 
 begin
+
+  valid_sig_no_reset <= state(0) = '0' and i_valid = '1';
+
   mem1 : entity work.mem(main)
     port map (
       address => address1,
@@ -101,7 +105,7 @@ begin
   begin
     wait until rising_edge(i_clock);
   -- TODO: Test corner cases 255 + 255 and -255
-    if (i_valid = '1' and (state(1) or state(2)) = '1') then
+    if (i_valid = '1' and state(0) = '0') then
       if (row_index(0) = '1') then
         data1 <= i_input;
         address1 <= std_logic_vector(column_counter);
@@ -126,8 +130,8 @@ begin
   increment_counters : process
   begin
     wait until rising_edge(i_clock);
-
-    if (i_valid = '1' and (state(1) or state(2)) = '1') then
+    
+    if valid_sig_no_reset = '1' then
       if (column_counter = 15) then
         column_counter <= to_unsigned(0, 4);
         row_counter <= row_counter + 1;
@@ -136,14 +140,18 @@ begin
         column_counter <= column_counter + 1;
       end if;
 
-      if (state(2) = '1' and calculation >= 0) then
+      -- TODO: Check if >= in lab manual
+      if (calculation >= 0) then
         count <= count + 1;
       end if;
+
+    -- We are in reset state
     elsif (state(0) = '1') then
       column_counter <= to_unsigned(0, 4);
       row_counter <= to_unsigned(0, 4);
       row_index <= S0;
       count <= to_unsigned(0, 8);
+      calculation <= to_signed(0, 10);
     end if;
   end process;
 
