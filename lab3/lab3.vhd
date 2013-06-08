@@ -84,15 +84,15 @@ begin
   begin
     wait until rising_edge(i_clock);
     -- TODO: state 0 if push button 0 pressed also
-    if (row_counter = 0 and column_counter = 0) then
-      state <= S0;
-    end if;
+    --if (row_counter = 0 and column_counter = 0) then
+    --  state <= S0;
+    --end if;
 
     if (i_valid = '1' and row_counter = 0 and column_counter = 0) then
-      -- state 1
+      -- state 1 - increment without calculations
       state <= state rol 1;
     elsif (i_valid = '1' and row_counter = 2 and column_counter = 0) then
-      --state 2
+      -- state 2 - start calculations
       state <= state rol 1;
     end if;
   end process;
