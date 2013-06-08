@@ -27,7 +27,6 @@ architecture main of lab3 is
   signal count : unsigned(7 downto 0);
   signal calculation : signed(9 downto 0);
   signal row_counter : unsigned(3 downto 0);
-  signal row_index : unsigned(1 downto 0);
   signal column_counter : unsigned(3 downto 0);
   signal address1
        , address2
@@ -45,6 +44,7 @@ architecture main of lab3 is
        , c
        : unsigned(9 downto 0);
   signal state : state_ty;
+  signal row_index : state_ty;
 
    -- A function to rotate left (rol) a vector by n bits
   function "rol" ( a : std_logic_vector; n : natural )
@@ -96,20 +96,25 @@ begin
       state <= state rol 1;
     end if;
   end process;
+
   store_input : process
   begin
     wait until rising_edge(i_clock);
   -- TODO: Test corner cases 255 + 255 and -255
-    -- TODO: change system to work with valid bit states
     if (i_valid = '1' and (state(1) or state(2)) = '1') then
-      -- TODO: how decide which data/address to use?
-      -- address of row_index's mem is column_counter
-      -- set data of row_index's mem to be i_input
-      -- grab q from row_index's mem
-      data1 <= i_input;
-      address1 <= std_logic_vector(column_counter);
+      if (row_index(0) = '1') then
+        data1 <= i_input;
+        address1 <= std_logic_vector(column_counter);
+      elsif (row_index(1) = '1') then
+        data2 <= i_input;
+        address2 <= std_logic_vector(column_counter);
+      else
+        data3 <= i_input;
+        address3 <= std_logic_vector(column_counter);
+      end if;
 
       if (state(2) = '1') then
+        -- TODO: actulally do calculations correctly
         a <= unsigned("00" & i_input);
         b <= to_unsigned(100, 10);
         c <= a;
@@ -137,12 +142,12 @@ begin
     elsif (state(0) = '1') then
       column_counter <= to_unsigned(0, 4);
       row_counter <= to_unsigned(0, 4);
-      row_index <= to_unsigned(0, 2);
+      row_index <= S0;
       count <= to_unsigned(0, 8);
     end if;
   end process;
 
-  o_output <= q1;
+  o_output <= std_logic_vector(count);
 end architecture main;
 
 -- Q1: number of flip flops and lookup tables?
