@@ -93,10 +93,10 @@ begin
 
     if (i_valid = '1' and row_counter = 0 and column_counter = 0) then
       -- state 1 - increment without calculations
-      state <= state rol 1;
+      state <= S1;
     elsif (i_valid = '1' and row_counter = 2 and column_counter = 0) then
       -- state 2 - start calculations
-      state <= state rol 1;
+      state <= S2;
     end if;
   end process;
 
@@ -104,7 +104,7 @@ begin
   begin
     wait until rising_edge(i_clock);
   -- TODO: Test corner cases 255 + 255 and -255
-    if (i_valid = '1' and state(0) = '0') then
+    if valid_sig_no_reset = '1' then
       if (row_index(0) = '1') then
         data1 <= i_input;
         address1 <= std_logic_vector(column_counter);
@@ -154,7 +154,7 @@ begin
     end if;
   end process;
 
-  o_output <= "0000" & std_logic_vector(column_counter);
+  o_output <= q1;
 end architecture main;
 
 -- Q1: number of flip flops and lookup tables?
