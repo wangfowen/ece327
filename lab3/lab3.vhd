@@ -87,10 +87,9 @@ begin
   set_state : process
   begin
     wait until rising_edge(i_clock);
-    -- TODO: state 0 if push button 0 pressed also
-    --if (row_counter = 0 and column_counter = 0) then
-    --  state <= S0;
-    --end if;
+    if (i_reset = '1' or (row_counter = 15 and column_counter = 15)) then
+      state <= S0;
+    end if;
 
     if (i_valid = '1' and row_counter = 0 and column_counter = 0) then
       -- state 1 - increment without calculations
@@ -130,7 +129,7 @@ begin
   increment_counters : process
   begin
     wait until rising_edge(i_clock);
-    
+
     if valid_sig_no_reset = '1' then
       if (column_counter = 15) then
         column_counter <= to_unsigned(0, 4);
@@ -155,7 +154,7 @@ begin
     end if;
   end process;
 
-  o_output <= std_logic_vector(count);
+  o_output <= "0000" & std_logic_vector(column_counter);
 end architecture main;
 
 -- Q1: number of flip flops and lookup tables?
