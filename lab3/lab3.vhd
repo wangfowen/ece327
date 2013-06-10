@@ -10,7 +10,7 @@ package state_pkg is
 
   subtype mem_address is unsigned(3 downto 0);
   type mem_address_vector is array(natural range <> ) of mem_address;
-  
+
   subtype mem_data is unsigned(7 downto 0);
   type mem_data_vector is array(natural range <>) of mem_data; 
 end state_pkg;
@@ -93,10 +93,6 @@ begin
       if (counter >= 32) then
         -- TODO: Test corner cases 255 + 255 and -255
         calculation <= signed(("00" & a) - ("00" & b) + ("00" & c));
-        
-        if (calculation >= 0) then
-          count <= count + 1;
-        end if;
       end if;
     end if;
   end process;
@@ -106,6 +102,12 @@ begin
     wait until rising_edge(i_clock);
     if (i_reset = '1') then
       count <= to_unsigned(0, 8);
+    elsif (i_valid = '1') then
+      if (counter >= 32) then
+        if (calculation >= 0) then
+          count <= count + 1;
+        end if;
+      end if;
     end if;
   end process;
 
