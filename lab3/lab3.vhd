@@ -46,8 +46,6 @@ architecture main of lab3 is
   signal row_index : state_ty;
   signal row_index_and_i_valid : state_ty;
   signal i_valid_and_row_count_2 : std_logic;
-
-  -- Optimization signals
   signal goto_init : std_logic;
 
    -- A function to rotate left (rol) a vector by n bits
@@ -60,7 +58,7 @@ architecture main of lab3 is
 
 begin
   -- counter is 256 when it increments past row/column both being 15 and overflows
-  goto_init <= '1' when counter > 256 or i_reset = '1'
+  goto_init <= '1' when counter = 256 or i_reset = '1'
               else '0';
   c <= unsigned(i_input);
   a <=  q(0) when row_index(2) = '1' else
@@ -129,7 +127,7 @@ begin
     end if;
   end process;
 
-  o_output <= std_logic_vector(count);
+  o_output <= std_logic_vector(count) when i_valid = '1';
 end architecture main;
 
 -- Q1: number of flip flops and lookup tables?
