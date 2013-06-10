@@ -43,7 +43,6 @@ architecture main of lab3 is
        , b
        , c
        : unsigned(7 downto 0);
-  signal state : state_ty;
   signal row_index : state_ty;
   signal row_index_and_i_valid : state_ty;
 
@@ -63,6 +62,12 @@ begin
   goto_init <= '1' when row_counter >= 15 and column_counter >= 15
               else '0';
   c <= unsigned(i_input);
+  a <=  q(0) when row_index(2) = '1' else
+        q(1) when row_index(0) = '1' else
+        q(2);
+  b <=  q(0) when row_index(1) = '1' else
+        q(1) when row_index(2) = '1' else
+        q(2);
 
   MEM_CPY: for I in 0 to 2 generate
     row_index_and_i_valid(I) <= i_valid and row_index(I);
@@ -75,33 +80,34 @@ begin
       unsigned(q) => q(I)
     );
   end generate MEM_CPY;
-
+  
   store_input : process
   begin
     wait until rising_edge(i_clock);
-    
-    if i_valid = '1' then
+    if (i_reset = '1') then
+      calculation <= to_signed (-1, 10);
+    elsif (i_valid = '1') then
       -- Store input into memory
-
       if (row_counter >= 2) then
-        -- TODO MAKE THIS COMBINATIONAL!!!
-        if (row_index(0) = '1') then
-          a <= q(1);
-          b <= q(2);
-        elsif (row_index(1) = '1') then
-          a <= q(2);
-          b <= q(0);
-        else
-          a <= q(0);
-          b <= q(1);
-        end if;
-
         -- TODO: Test corner cases 255 + 255 and -255
         calculation <= signed(("00" & a) - ("00" & b) + ("00" & c));
-
-        -- TODO add to count
       end if;
     end if;
+  end process;
+
+  counter : process
+  begin
+    wait until rising_edge(i_clock);
+    if (i_reset = '1') then
+      count <= to_unsigned(0, 8);
+    elsif (i_valid = '1') then
+      if (row_counter >= 2) then
+        if (calculation >= 0) then
+          count <= count + 1;
+        end if;
+      end if;
+    end if;
+
   end process;
 
   increment_counters : process
@@ -109,17 +115,17 @@ begin
     wait until rising_edge(i_clock);
     -- TODO reset state after end of matrix with goto_init and test optimizations
     -- TODO check if making each counter/state machine its own process will help optimizations
+    -- TODO fix bug with row counter
 
     if (i_reset = '1') then     
       column_counter <= to_unsigned(0, 4);
       row_counter <= to_unsigned(0, 4);
-      count <= to_unsigned(0, 8);
 
     elsif (i_valid = '1') then
      
       if (column_counter >= 15) then
-        column_counter <= to_unsigned(0, 4);
         row_counter <= row_counter + 1;
+        column_counter <= to_unsigned(0, 4);
       else
         column_counter <= column_counter + 1;
       end if;
@@ -141,7 +147,7 @@ begin
     end if;
   end process;
 
-  o_output <= std_logic_vector(q(0));
+  o_output <= std_logic_vector(count);
 end architecture main;
 
 -- Q1: number of flip flops and lookup tables?
