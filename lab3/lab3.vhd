@@ -46,7 +46,6 @@ architecture main of lab3 is
   signal row_index : state_ty;
   signal row_index_and_i_valid : state_ty;
   signal i_valid_and_row_count_2 : std_logic;
-  signal i_valid_and_row_count_2_and_calc_pos : std_logic;
 
   -- Optimization signals
   signal goto_init : std_logic;
@@ -61,7 +60,7 @@ architecture main of lab3 is
 
 begin
   -- counter is 256 when it increments past row/column both being 15 and overflows
-  goto_init <= '1' when counter = 256
+  goto_init <= '1' when counter > 256 or i_reset = '1'
               else '0';
   c <= unsigned(i_input);
   a <=  q(0) when row_index(2) = '1' else
@@ -72,8 +71,7 @@ begin
         q(2);
   i_valid_and_row_count_2 <= '1' when counter >= 32 and i_valid = '1'
                              else '0';
-  i_valid_and_row_count_2_and_calc_pos <= '1' when i_valid_and_row_count_2 = '1' and calculation >= 0
-                                          else '0';
+
   MEM_CPY: for I in 0 to 2 generate
     row_index_and_i_valid(I) <= i_valid and row_index(I);
     mem : entity work.mem(main)
@@ -90,7 +88,7 @@ begin
   do_calculation : process
   begin
     wait until rising_edge(i_clock);
-    if (i_reset = '1') then
+    if (goto_init = '1') then
       calculation <= to_signed (0, 10);
     elsif i_valid_and_row_count_2  = '1' then
         -- TODO: Test corner cases 255 + 255 and -255
@@ -101,9 +99,9 @@ begin
   increment_count : process
   begin
     wait until rising_edge(i_clock);
-    if (i_reset = '1') then
+    if (goto_init = '1') then
       count <= to_unsigned(0, 8);
-    elsif i_valid_and_row_count_2_and_calc_pos = '1' then
+    elsif i_valid_and_row_count_2 = '1' and calculation >= 0 then
           count <= count + 1;
     end if;
   end process;
@@ -111,7 +109,7 @@ begin
   increment_counters : process
   begin
     wait until rising_edge(i_clock);
-    if (i_reset = '1') then
+    if (goto_init = '1') then
       counter <= to_unsigned(0, 9);
     elsif (i_valid = '1') then
         counter <= counter + 1;
@@ -122,9 +120,8 @@ begin
   begin
     wait until rising_edge(i_clock);
 
-    if (i_reset = '1') then
+    if (goto_init = '1') then
       row_index <= S0;
-
     elsif (i_valid = '1') then
       if (counter(3 downto 0) = 15) then
         row_index <= row_index rol 1;
