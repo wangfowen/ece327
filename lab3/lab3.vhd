@@ -33,8 +33,8 @@ end entity lab3;
 architecture main of lab3 is
   signal count : unsigned(7 downto 0);
   signal calculation : signed(9 downto 0);
-  signal row_counter : unsigned(3 downto 0);
-  signal column_counter : unsigned(3 downto 0);
+  -- first four bits are column counter, next four is row, last is overflow
+  signal counter : unsigned(8 downto 0);
   signal address : mem_address_vector(2 downto 0);
   signal data
        , q
@@ -59,7 +59,8 @@ architecture main of lab3 is
   end function;
 
 begin
-  goto_init <= '1' when row_counter >= 15 and column_counter >= 15
+  -- counter is 256 when it increments past row/column both being 15 and overflows
+  goto_init <= '1' when counter = 256
               else '0';
   c <= unsigned(i_input);
   a <=  q(0) when row_index(2) = '1' else
@@ -73,7 +74,8 @@ begin
     row_index_and_i_valid(I) <= i_valid and row_index(I);
     mem : entity work.mem(main)
     port map (
-      address => std_logic_vector(column_counter),
+      -- just column counter
+      address => std_logic_vector(counter(3 downto 0)),
       clock => i_clock,
       data => i_input,
       wren => row_index_and_i_valid(I),
@@ -87,7 +89,8 @@ begin
     if (i_reset = '1') then
       calculation <= to_signed (-1, 10);
     elsif (i_valid = '1') then
-      if (row_counter >= 2) then
+      -- row counter >= 2
+      if (counter >= 32) then
         -- TODO: Test corner cases 255 + 255 and -255
         calculation <= signed(("00" & a) - ("00" & b) + ("00" & c));
       end if;
@@ -100,7 +103,7 @@ begin
     if (i_reset = '1') then
       count <= to_unsigned(0, 8);
     elsif (i_valid = '1') then
-      if (row_counter >= 2) then
+      if (counter >= 32) then
         if (calculation >= 0) then
           count <= count + 1;
         end if;
@@ -117,17 +120,9 @@ begin
     -- TODO fix bug with row counter
 
     if (i_reset = '1') then
-      column_counter <= to_unsigned(0, 4);
-      row_counter <= to_unsigned(0, 4);
-
+      counter <= to_unsigned(0, 9);
     elsif (i_valid = '1') then
-      if (column_counter >= 15) then
-        row_counter <= row_counter + 1;
-        column_counter <= to_unsigned(0, 4);
-      else
-        column_counter <= column_counter + 1;
-      end if;
-
+        counter <= counter + 1;
     end if;
   end process;
 
@@ -139,7 +134,7 @@ begin
       row_index <= S0;
 
     elsif (i_valid = '1') then
-      if (column_counter >= 15) then
+      if (counter(3 downto 0) = 15) then
         row_index <= row_index rol 1;
       end if;
     end if;
