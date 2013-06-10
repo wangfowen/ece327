@@ -80,14 +80,13 @@ begin
       unsigned(q) => q(I)
     );
   end generate MEM_CPY;
-  
-  store_input : process
+
+  do_calculation : process
   begin
     wait until rising_edge(i_clock);
     if (i_reset = '1') then
       calculation <= to_signed (-1, 10);
     elsif (i_valid = '1') then
-      -- Store input into memory
       if (row_counter >= 2) then
         -- TODO: Test corner cases 255 + 255 and -255
         calculation <= signed(("00" & a) - ("00" & b) + ("00" & c));
@@ -95,7 +94,7 @@ begin
     end if;
   end process;
 
-  counter : process
+  increment_count : process
   begin
     wait until rising_edge(i_clock);
     if (i_reset = '1') then
@@ -117,19 +116,18 @@ begin
     -- TODO check if making each counter/state machine its own process will help optimizations
     -- TODO fix bug with row counter
 
-    if (i_reset = '1') then     
+    if (i_reset = '1') then
       column_counter <= to_unsigned(0, 4);
       row_counter <= to_unsigned(0, 4);
 
     elsif (i_valid = '1') then
-     
       if (column_counter >= 15) then
         row_counter <= row_counter + 1;
         column_counter <= to_unsigned(0, 4);
       else
         column_counter <= column_counter + 1;
       end if;
-    
+
     end if;
   end process;
 
@@ -140,7 +138,7 @@ begin
     if (i_reset = '1') then
       row_index <= S0;
 
-    elsif (i_valid = '1') then  
+    elsif (i_valid = '1') then
       if (column_counter >= 15) then
         row_index <= row_index rol 1;
       end if;
