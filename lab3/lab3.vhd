@@ -89,8 +89,8 @@ begin
     if (goto_init = '1') then
       calculation <= to_signed (0, 10);
     elsif i_valid_and_row_count_2  = '1' then
-        -- TODO: Test corner cases 255 + 255 and -255
-        calculation <= signed(("00" & a) - ("00" & b) + ("00" & c));
+      -- TODO: Test corner cases 255 + 255 and -255
+      calculation <= signed(("00" & a) - ("00" & b) + ("00" & c));
     end if;
   end process;
 
@@ -100,7 +100,7 @@ begin
     if (goto_init = '1') then
       count <= to_unsigned(0, 8);
     elsif i_valid_and_row_count_2 = '1' and calculation >= 0 then
-          count <= count + 1;
+      count <= count + 1;
     end if;
   end process;
 
@@ -110,7 +110,7 @@ begin
     if (goto_init = '1') then
       counter <= to_unsigned(0, 9);
     elsif (i_valid = '1') then
-        counter <= counter + 1;
+      counter <= counter + 1;
     end if;
   end process;
 
