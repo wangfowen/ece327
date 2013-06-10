@@ -45,9 +45,10 @@ architecture main of lab3 is
        : unsigned(7 downto 0);
   signal row_index : state_ty;
   signal row_index_and_i_valid : state_ty;
+  signal i_valid_and_row_count_2 : std_logic;
+  signal i_valid_and_row_count_2_and_calc_pos : std_logic;
 
   -- Optimization signals
-  signal valid_sig_no_reset : std_logic;
   signal goto_init : std_logic;
 
    -- A function to rotate left (rol) a vector by n bits
@@ -69,7 +70,10 @@ begin
   b <=  q(0) when row_index(1) = '1' else
         q(1) when row_index(2) = '1' else
         q(2);
-
+  i_valid_and_row_count_2 <= '1' when counter >= 32 and i_valid = '1'
+                             else '0';
+  i_valid_and_row_count_2_and_calc_pos <= '1' when i_valid_and_row_count_2 = '1' and calculation >= 0
+                                          else '0';
   MEM_CPY: for I in 0 to 2 generate
     row_index_and_i_valid(I) <= i_valid and row_index(I);
     mem : entity work.mem(main)
@@ -88,12 +92,9 @@ begin
     wait until rising_edge(i_clock);
     if (i_reset = '1') then
       calculation <= to_signed (0, 10);
-    elsif (i_valid = '1') then
-      -- row counter >= 2
-      if (counter >= 32) then
+    elsif i_valid_and_row_count_2  = '1' then
         -- TODO: Test corner cases 255 + 255 and -255
         calculation <= signed(("00" & a) - ("00" & b) + ("00" & c));
-      end if;
     end if;
   end process;
 
@@ -102,22 +103,14 @@ begin
     wait until rising_edge(i_clock);
     if (i_reset = '1') then
       count <= to_unsigned(0, 8);
-    elsif (i_valid = '1') then
-      if (counter >= 32) then
-        if (calculation >= 0) then
+    elsif i_valid_and_row_count_2_and_calc_pos = '1' then
           count <= count + 1;
-        end if;
-      end if;
     end if;
   end process;
 
   increment_counters : process
   begin
     wait until rising_edge(i_clock);
-    -- TODO reset state after end of matrix with goto_init and test optimizations
-    -- TODO check if making each counter/state machine its own process will help optimizations
-    -- TODO fix bug with row counter
-
     if (i_reset = '1') then
       counter <= to_unsigned(0, 9);
     elsif (i_valid = '1') then
