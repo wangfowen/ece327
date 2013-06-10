@@ -87,12 +87,16 @@ begin
   begin
     wait until rising_edge(i_clock);
     if (i_reset = '1') then
-      calculation <= to_signed (-1, 10);
+      calculation <= to_signed (0, 10);
     elsif (i_valid = '1') then
       -- row counter >= 2
       if (counter >= 32) then
         -- TODO: Test corner cases 255 + 255 and -255
         calculation <= signed(("00" & a) - ("00" & b) + ("00" & c));
+        
+        if (calculation >= 0) then
+          count <= count + 1;
+        end if;
       end if;
     end if;
   end process;
@@ -102,14 +106,7 @@ begin
     wait until rising_edge(i_clock);
     if (i_reset = '1') then
       count <= to_unsigned(0, 8);
-    elsif (i_valid = '1') then
-      if (counter >= 32) then
-        if (calculation >= 0) then
-          count <= count + 1;
-        end if;
-      end if;
     end if;
-
   end process;
 
   increment_counters : process
