@@ -35,10 +35,7 @@ architecture main of lab3 is
   signal calculation : signed(9 downto 0);
   -- first four bits are column counter, next four is row, last is overflow
   signal counter : unsigned(8 downto 0);
-  signal address : mem_address_vector(2 downto 0);
-  signal data
-       , q
-       : mem_data_vector(2 downto 0);
+  signal q : mem_data_vector(2 downto 0);
   signal a
        , b
        , c
@@ -58,7 +55,7 @@ architecture main of lab3 is
 
 begin
   -- counter is 256 when it increments past row/column both being 15 and overflows
-  goto_init <= '1' when counter = 256 or i_reset = '1'
+  goto_init <= '1' when counter > 256 or i_reset = '1'
               else '0';
   c <= unsigned(i_input);
   a <=  q(0) when row_index(2) = '1' else
@@ -89,8 +86,8 @@ begin
     if (goto_init = '1') then
       calculation <= to_signed (0, 10);
     elsif i_valid_and_row_count_2  = '1' then
-      -- TODO: Test corner cases 255 + 255 and -255
-      calculation <= signed(("00" & a) - ("00" & b) + ("00" & c));
+        -- TODO: Test corner cases 255 + 255 and -255
+        calculation <= signed(("00" & a) - ("00" & b) + ("00" & c));
     end if;
   end process;
 
@@ -99,7 +96,8 @@ begin
     wait until rising_edge(i_clock);
     if (goto_init = '1') then
       count <= to_unsigned(0, 8);
-    elsif i_valid_and_row_count_2 = '1' and calculation >= 0 then
+    end if;
+    if i_valid_and_row_count_2 = '1' and calculation >= 0 then
       count <= count + 1;
     end if;
   end process;
@@ -110,7 +108,7 @@ begin
     if (goto_init = '1') then
       counter <= to_unsigned(0, 9);
     elsif (i_valid = '1') then
-      counter <= counter + 1;
+        counter <= counter + 1;
     end if;
   end process;
 
@@ -127,7 +125,7 @@ begin
     end if;
   end process;
 
-  o_output <= std_logic_vector(count) when i_valid = '1';
+  o_output <= std_logic_vector(count);
 end architecture main;
 
 -- Q1: number of flip flops and lookup tables?
