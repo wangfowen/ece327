@@ -8,9 +8,6 @@ package state_pkg is
   constant S1 : state_ty := "010";
   constant S2 : state_ty := "100";
 
-  subtype mem_address is unsigned(3 downto 0);
-  type mem_address_vector is array(natural range <> ) of mem_address;
-
   subtype mem_data is unsigned(7 downto 0);
   type mem_data_vector is array(natural range <>) of mem_data; 
 end state_pkg;
@@ -31,97 +28,87 @@ entity lab3 is
 end entity lab3;
 
 architecture main of lab3 is
-  signal count : unsigned(7 downto 0);
-  signal calculation : signed(9 downto 0);
-  -- first four bits are column counter, next four is row, last is overflow
-  signal counter : unsigned(8 downto 0);
-  signal q : mem_data_vector(2 downto 0);
-  signal a
-       , b
-       , c
-       : unsigned(7 downto 0);
-  signal row_index : state_ty;
-  signal row_index_and_i_valid : state_ty;
-  signal i_valid_and_row_count_2 : std_logic;
-  signal goto_init : std_logic;
+  signal count                    : unsigned(7 downto 0);
+  signal calculation              : signed(9 downto 0);
+  signal counter                  : unsigned(7 downto 0); -- 4 MSB is the column count, 4 LSB is the row count
+  signal q                        : mem_data_vector(2 downto 0);
+  signal a, b, c                  : unsigned(7 downto 0);
+  signal row_index                : state_ty;
+  signal i_valid_and_row_index    : state_ty;
 
    -- A function to rotate left (rol) a vector by n bits
   function "rol" ( a : std_logic_vector; n : natural )
   return std_logic_vector
   is
   begin
-      return std_logic_vector( unsigned(a) rol n );
+    return std_logic_vector( unsigned(a) rol n );
   end function;
 
 begin
-  -- counter is 256 when it increments past row/column both being 15 and overflows
-  goto_init <= '1' when counter > 256 or i_reset = '1'
-              else '0';
-  c <= unsigned(i_input);
   a <=  q(0) when row_index(2) = '1' else
         q(1) when row_index(0) = '1' else
         q(2);
   b <=  q(0) when row_index(1) = '1' else
         q(1) when row_index(2) = '1' else
         q(2);
-  i_valid_and_row_count_2 <= '1' when counter >= 32 and i_valid = '1'
-                             else '0';
+  c <= unsigned(i_input);
+  -- TODO: Optimize timing (This should be fun-ask if you need helps)
+  -- TODO: Test all test inputs for the testbench in simulator (There are 5 tests you can use)
+  -- TODO: Test on board
+  -- TODO: Fill in Questions 
 
+  -- COMMENT(Delete THIS): I resolved the end condition by letting our counter be 8 bits.
+  -- If counter = 1, then we can reset count. This is basically the behaviour we wanted, without fucking up our clock cycles.
+  -- You can look at the code below.
+
+  -- COMMENT (DELETE THIS): I tried to write up a and b in a different manner using and and or's.
+  -- There was a clever way you could do it but you end up with the same number of LUTS, so might as well use multiplexer's
+  -- If for some reason the multiplexers are causing the bad timing, we can revert back to this implementation, but I doubt it's 
+  -- what is causing the bad timing.
+
+  calculation <= signed(("00" & a) - ("00" & b) + ("00" & c));
+  -- TODO: Test corner cases 255 + 255 and -255
+  
   MEM_CPY: for I in 0 to 2 generate
-    row_index_and_i_valid(I) <= i_valid and row_index(I);
+    i_valid_and_row_index(I) <= i_valid and row_index(I);
     mem : entity work.mem(main)
     port map (
-      -- just column counter
-      address => std_logic_vector(counter(3 downto 0)),
+      address => std_logic_vector(counter(3 downto 0)), -- just column counter
       clock => i_clock,
       data => i_input,
-      wren => row_index_and_i_valid(I),
+      wren => i_valid_and_row_index(I),
       unsigned(q) => q(I)
     );
   end generate MEM_CPY;
 
-  do_calculation : process
-  begin
-    wait until rising_edge(i_clock);
-    if (goto_init = '1') then
-      calculation <= to_signed (0, 10);
-    elsif i_valid_and_row_count_2  = '1' then
-        -- TODO: Test corner cases 255 + 255 and -255
-        calculation <= signed(("00" & a) - ("00" & b) + ("00" & c));
-    end if;
-  end process;
-
-  increment_count : process
-  begin
-    wait until rising_edge(i_clock);
-    if (goto_init = '1') then
-      count <= to_unsigned(0, 8);
-    end if;
-    if i_valid_and_row_count_2 = '1' and calculation >= 0 then
-      count <= count + 1;
-    end if;
-  end process;
-
+  -- Counter goes back to 0 once we reach 256 because counter has 8 bits
   increment_counters : process
   begin
     wait until rising_edge(i_clock);
-    if (goto_init = '1') then
-      counter <= to_unsigned(0, 9);
+    if (i_reset = '1') then
+      counter <= to_unsigned(0, 8);
     elsif (i_valid = '1') then
-        counter <= counter + 1;
+      counter <= counter + 1;
     end if;
   end process;
 
   rotate_row_index : process
   begin
     wait until rising_edge(i_clock);
-
-    if (goto_init = '1') then
+    if (i_reset = '1' or counter = 0) then
       row_index <= S0;
-    elsif (i_valid = '1') then
-      if (counter(3 downto 0) = 15) then
-        row_index <= row_index rol 1;
-      end if;
+    elsif (i_valid = '1' and counter(3 downto 0) = 15) then
+      row_index <= row_index rol 1;
+    end if;
+  end process;
+
+  increment_count : process
+  begin
+    wait until rising_edge(i_clock);
+    if (i_reset = '1' or counter = 1) then
+      count <= to_unsigned(0, 8);
+    elsif (i_valid = '1' and counter(7 downto 5) > 0 and calculation >= 0) then
+      count <= count + 1;
     end if;
   end process;
 
