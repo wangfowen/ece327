@@ -58,11 +58,7 @@ begin
 
   goto_init <= '1' when i_reset = '1' or counter(8) = '1' else
                '0';
-  -- TODO: Test all test inputs for the testbench in simulator (There are 5 tests you can use)
-  -- TODO: Test on board
-
-  -- TODO: Test corner cases 255 + 255 and -255
-
+  
   MEM_CPY: for I in 0 to 2 generate
     i_valid_and_row_index(I) <= i_valid and row_index(I);
     mem : entity work.mem(main)
@@ -115,7 +111,9 @@ begin
   store_output : process
   begin
     wait until rising_edge(i_clock);
-    if (goto_init = '1') then
+    if (i_reset = '1') then
+      output <= to_unsigned(0,8);
+    elsif (counter(8) = '1') then
       output <= count;
     end if;
   end process;
@@ -124,10 +122,15 @@ begin
 end architecture main;
 
 -- Q1: number of flip flops and lookup tables?
--- Within our lab3 cell there were 81 lookup tables and 28 flip flops.
+-- Within our lab3 cell there were 80 lookup tables and 28 flip flops.
+-- This was found using uw-synth --chip lab3.uwp
 
 -- Q2: maximum clock frequency?
 -- Our maximum clock frequency is 224 MHz
+-- This was also found using uw-synth --chip lab3.uwp
 
 -- Q3: source and destination signals of critical path?
 -- The source of the critical path is reg_out_o..uf/clk and the destination signal is o_output
+
+-- Q4: Was your design successful for all 5 tests?
+-- Yes they were. The first three matched the expected and test 4 we got b2 and test 5 we got c9.
