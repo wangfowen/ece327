@@ -10,7 +10,7 @@ package state_pkg is
 
   subtype mem_data is unsigned(7 downto 0);
   type mem_data_vector is array(natural range <>) of mem_data;
-  
+
   subtype calc_data is signed (9 downto 0); 
   type calc_data_vector is array(natural range <>) of calc_data;
 end state_pkg;
@@ -60,19 +60,9 @@ begin
                '0';
   -- TODO: Test all test inputs for the testbench in simulator (There are 5 tests you can use)
   -- TODO: Test on board
-  -- TODO: Fill in Questions 
 
-  -- COMMENT(Delete THIS): I resolved the end condition by letting our counter be 8 bits.
-  -- If counter = 1, then we can reset count. This is basically the behaviour we wanted, without fucking up our clock cycles.
-  -- You can look at the code below.
-
-  -- COMMENT (DELETE THIS): I tried to write up a and b in a different manner using and and or's.
-  -- There was a clever way you could do it but you end up with the same number of LUTS, so might as well use multiplexer's
-  -- If for some reason the multiplexers are causing the bad timing, we can revert back to this implementation, but I doubt it's 
-  -- what is causing the bad timing.
-  
   -- TODO: Test corner cases 255 + 255 and -255
-  
+
   MEM_CPY: for I in 0 to 2 generate
     i_valid_and_row_index(I) <= i_valid and row_index(I);
     mem : entity work.mem(main)
@@ -134,10 +124,10 @@ begin
 end architecture main;
 
 -- Q1: number of flip flops and lookup tables?
---
+-- Within our lab3 cell there were 81 lookup tables and 28 flip flops.
 
 -- Q2: maximum clock frequency?
---
+-- Our maximum clock frequency is 224 MHz
 
 -- Q3: source and destination signals of critical path?
--- 
+-- The source of the critical path is reg_out_o..uf/clk and the destination signal is o_output
