@@ -122,15 +122,15 @@ begin
 end architecture main;
 
 -- Q1: number of flip flops and lookup tables?
--- Within our lab3 cell there were 80 lookup tables and 28 flip flops.
+-- Within our lab3 cell there was 80 lookup tables and 28 flip flops.
 -- This was found using uw-synth --chip lab3.uwp
 
 -- Q2: maximum clock frequency?
--- Our maximum clock frequency is 224 MHz
+-- Our maximum clock frequency is 224 MHz for our lab3 cell
 -- This was also found using uw-synth --chip lab3.uwp
 
 -- Q3: source and destination signals of critical path?
--- The source of the critical path is reg_out_o..uf/clk and the destination signal is o_output
+-- The source of the critical path is reg_output/clk and the destination of the critical path is o_output
 
 -- Q4: Was your design successful for all 5 tests?
--- Yes they were. The first three matched the expected and test 4 we got b2 and test 5 we got c9.
+-- Yes, all tests showed the correct value as stated in lab3_tb.vhd in both simulation and physical UART.
