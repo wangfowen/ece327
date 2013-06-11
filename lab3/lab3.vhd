@@ -9,7 +9,10 @@ package state_pkg is
   constant S2 : state_ty := "100";
 
   subtype mem_data is unsigned(7 downto 0);
-  type mem_data_vector is array(natural range <>) of mem_data; 
+  type mem_data_vector is array(natural range <>) of mem_data;
+  
+  subtype calc_data is signed (9 downto 0); 
+  type calc_data_vector is array(natural range <>) of calc_data;
 end state_pkg;
 
 library ieee;
@@ -28,13 +31,15 @@ entity lab3 is
 end entity lab3;
 
 architecture main of lab3 is
+  signal output                   : unsigned(7 downto 0);
   signal count                    : unsigned(7 downto 0);
-  signal calculation              : signed(9 downto 0);
-  signal counter                  : unsigned(7 downto 0); -- 4 MSB is the column count, 4 LSB is the row count
+  signal calculation              : calc_data_vector(2 downto 0);
+  signal counter                  : unsigned(8 downto 0); -- 5 MSB is the row count, 4 LSB is the column count
   signal q                        : mem_data_vector(2 downto 0);
-  signal a, b, c                  : unsigned(7 downto 0);
+  signal c                        : unsigned(7 downto 0);
   signal row_index                : state_ty;
   signal i_valid_and_row_index    : state_ty;
+  signal goto_init                : std_logic;
 
    -- A function to rotate left (rol) a vector by n bits
   function "rol" ( a : std_logic_vector; n : natural )
@@ -45,14 +50,14 @@ architecture main of lab3 is
   end function;
 
 begin
-  a <=  q(0) when row_index(2) = '1' else
-        q(1) when row_index(0) = '1' else
-        q(2);
-  b <=  q(0) when row_index(1) = '1' else
-        q(1) when row_index(2) = '1' else
-        q(2);
   c <= unsigned(i_input);
-  -- TODO: Optimize timing (This should be fun-ask if you need helps)
+
+  calculation(0) <= signed(("00" & q(1)) - ("00" & q(2)) + ("00" & c));
+  calculation(1) <= signed(("00" & q(2)) - ("00" & q(0)) + ("00" & c));
+  calculation(2) <= signed(("00" & q(0)) - ("00" & q(1)) + ("00" & c));
+
+  goto_init <= '1' when i_reset = '1' or counter(8) = '1' else
+               '0';
   -- TODO: Test all test inputs for the testbench in simulator (There are 5 tests you can use)
   -- TODO: Test on board
   -- TODO: Fill in Questions 
@@ -65,8 +70,7 @@ begin
   -- There was a clever way you could do it but you end up with the same number of LUTS, so might as well use multiplexer's
   -- If for some reason the multiplexers are causing the bad timing, we can revert back to this implementation, but I doubt it's 
   -- what is causing the bad timing.
-
-  calculation <= signed(("00" & a) - ("00" & b) + ("00" & c));
+  
   -- TODO: Test corner cases 255 + 255 and -255
   
   MEM_CPY: for I in 0 to 2 generate
@@ -81,12 +85,11 @@ begin
     );
   end generate MEM_CPY;
 
-  -- Counter goes back to 0 once we reach 256 because counter has 8 bits
   increment_counters : process
   begin
     wait until rising_edge(i_clock);
-    if (i_reset = '1') then
-      counter <= to_unsigned(0, 8);
+    if (goto_init = '1') then
+      counter <= to_unsigned(0, 9);
     elsif (i_valid = '1') then
       counter <= counter + 1;
     end if;
@@ -95,7 +98,7 @@ begin
   rotate_row_index : process
   begin
     wait until rising_edge(i_clock);
-    if (i_reset = '1' or counter = 0) then
+    if (goto_init = '1') then
       row_index <= S0;
     elsif (i_valid = '1' and counter(3 downto 0) = 15) then
       row_index <= row_index rol 1;
@@ -105,14 +108,29 @@ begin
   increment_count : process
   begin
     wait until rising_edge(i_clock);
-    if (i_reset = '1' or counter = 1) then
+    if (goto_init = '1') then
       count <= to_unsigned(0, 8);
-    elsif (i_valid = '1' and counter(7 downto 5) > 0 and calculation >= 0) then
-      count <= count + 1;
+    elsif (i_valid = '1' and counter(7 downto 5) > 0) then -- Once we reach row 2, start saving calculations
+      if (row_index(0) = '1' and calculation(0) >= 0) then
+        count <= count + 1;
+      elsif (row_index(1) = '1' and calculation(1) >= 0) then
+        count <= count + 1;
+      elsif (row_index(2) = '1' and calculation(2) >= 0) then
+        count <= count + 1;
+      end if;
     end if;
   end process;
 
-  o_output <= std_logic_vector(count);
+  -- Only display the final value and hold it until we parse new data
+  store_output : process
+  begin
+    wait until rising_edge(i_clock);
+    if (goto_init = '1') then
+      output <= count;
+    end if;
+  end process;
+
+  o_output <= std_logic_vector(output);
 end architecture main;
 
 -- Q1: number of flip flops and lookup tables?
