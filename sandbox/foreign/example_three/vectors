@@ -1,0 +1,48 @@
+#Copyright 1991-2011 Mentor Graphics Corporation
+#
+#All Rights Reserved.
+#
+#THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION WHICH IS THE PROPERTY OF 
+#MENTOR GRAPHICS CORPORATION OR ITS LICENSORS AND IS SUBJECT TO LICENSE TERMS.
+
+# test vectors for testing a bidirectional transceiver.
+#
+# format:
+#  each line must be of the form:
+#         [type]  [time]  [[name=value] ...]
+#
+#   where type is either "test" or "drive"
+#         time is the absolute time to drive the signal or test its value
+#         name is the port name to test or drive
+#         value is the std_logic or std_logic_vector to test for or drive to
+#
+# note: signal names must match port names in the entity declaration
+#
+# TEST 1: test A => B
+#
+drive    0 portoe=0 portdir=1 porta=10110110 portb=ZZZZZZZZ
+test    20                                   portb=10110110
+
+#
+# TEST 2: test tri-state disable
+#
+drive  100 portoe=1           porta=ZZZZZZZZ
+test   120 portoe=1 portdir=1 porta=ZZZZZZZZ portb=ZZZZZZZZ
+
+#
+# TEST 3: test A => B (all ones)
+#
+drive  200 portoe=0           porta=11111111
+test   220                                   portb=11111111
+
+#
+# TEST 4: test A => B (all zeros) - note bad expected pattern on portb
+#
+drive  300                    porta=00000000
+test   320                                   portb=00010000
+
+#
+# TEST 4: test B => A (alternating bits)
+#
+drive  400          portdir=0 porta=ZZZZZZZZ portb=01010101 
+test   420                    porta=01010101
