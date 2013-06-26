@@ -1,0 +1,14 @@
+add wave sim:/kirsch_tb/clock
+add wave sim:/kirsch_tb/in_valid
+add wave -radix unsigned sim:/kirsch_tb/in_pixel
+add wave sim:/kirsch_tb/reset
+add wave sim:/kirsch_tb/out_mode
+add wave -radix unsigned sim:/kirsch_tb/out_row
+# add wave -radix unsigned sim:/kirsch_tb/uut/o_column
+add wave sim:/kirsch_tb/out_valid
+add wave sim:/kirsch_tb/out_edge
+add wave sim:/kirsch_tb/out_dir
+
+
+run 10600000 ns
+

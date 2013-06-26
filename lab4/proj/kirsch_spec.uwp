@@ -1,0 +1,8 @@
+TB_ENTITY = kirsch_tb
+TB_ARCH = main
+TB_VHDL = kirsch_synth_pkg.vhd string_pkg.vhd kirsch_unsynth_pkg.vhd kirsch_tb.vhd
+SIM_SCRIPT = kirsch_tb.sim
+
+DESIGN_ENTITY = kirsch
+DESIGN_ARCH = main
+DESIGN_VHDL = mem.vhd kirsch_synth_pkg.vhd string_pkg.vhd kirsch_unsynth_pkg.vhd kirsch_spec.vhd
