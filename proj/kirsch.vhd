@@ -47,14 +47,14 @@ entity kirsch is
   );
 end entity;
 
-
 architecture main of kirsch is
   signal q                        : mem_data_vector(2 downto 0);
-  signal row_index                : state_ty;
-  signal i_valid_and_row_index    : state_ty;
+  signal mem_row_index                : state_ty;
+  signal i_valid_and_mem_row_index    : state_ty;
   signal mode                     : mode_ty;
   signal goto_init                : std_logic;
   signal counter                  : unsigned(16 downto 0); -- 9 MSB is the row count, 8 LSB is the column count
+  signal row_count                : unsigned(7 downto 0);
 
    -- A function to rotate left (rol) a vector by n bits
   function "rol" ( a : std_logic_vector; n : natural )
@@ -64,7 +64,6 @@ architecture main of kirsch is
     return std_logic_vector( unsigned(a) rol n );
   end function;
 begin
-
   debug_num_5 <= X"E";
   debug_num_4 <= X"C";
   debug_num_3 <= X"E";
@@ -75,17 +74,18 @@ begin
   debug_led_red <= (others => '0');
   debug_led_grn <= (others => '0');
 
-  goto_init <= '1' when i_reset = '1' or counter(8) = '1' else
+  --restart when reset is pressed or reaches end of image
+  goto_init <= '1' when i_reset = '1' or counter(16) = '1' else
                '0';
 
   MEM_CPY : for I in 0 to 2 generate
-    i_valid_and_row_index(I) <= i_valid and row_index(I);
+    i_valid_and_mem_row_index(I) <= i_valid and mem_row_index(I);
     mem : entity work.mem(main)
     port map (
       address => std_logic_vector(counter(7 downto 0)), -- just column counter
       clock => i_clock,
       data => i_pixel,
-      wren => i_valid_and_row_index(I),
+      wren => i_valid_and_mem_row_index(I),
       unsigned(q) => q(I)
     );
   end generate MEM_CPY;
@@ -100,17 +100,16 @@ begin
     end if;
   end process;
 
-  rotate_row_index : process
+  rotate_mem_row_index : process
   begin
     wait until rising_edge(i_clock);
     if (goto_init = '1') then
-      row_index <= S0;
+      mem_row_index <= S0;
     -- reached end of column
     elsif (i_valid = '1' and counter(7 downto 0) = 255) then
-      row_index <= row_index rol 1;
+      mem_row_index <= mem_row_index rol 1;
     end if;
   end process;
-
 
   set_mode : process
   begin
@@ -118,12 +117,35 @@ begin
     if (goto_init = '1') then
       mode <= reset;
     end if;
+    --TOOD: when set mode to busy? idle?
   end process;
 
-  --TODO: calculations on 3x3 convolution table, set mode to busy til done
-  --TODO: when finish calculations set mode to idle then output correct things
-  o_edge <= '0';
-  o_dir <= "000";
+  detect_edge_stage_1 : process
+  begin
+    wait until rising_edge(i_clock);
+    if (goto_init = '1') then
+
+    elsif (i_valid = '1' and counter > 771) then -- Once we reach row 3 column 3, start doing convolution table stuff
+
+    end if;
+  end process;
+
+  --TODO: how pipeline so this happens at end of other stages..?
+  detect_edge_last_stage : process
+  begin
+    wait until rising_edge(i_clock);
+    o_valid <= '1';
+    o_row <= std_logic_vector(row_count);
+    --TODO: output correct things
+    o_edge <= '0';
+    o_dir <= "000";
+
+    if (goto_init = '1' or row_count = 255) then
+      row_count <= to_unsigned(0, 8);
+    else
+      row_count <= row_count + 1;
+    end if;
+  end process;
+
   o_mode <= mode;
-  o_row <= "00000000";
 end architecture;
