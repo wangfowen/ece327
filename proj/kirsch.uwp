@@ -1,0 +1,20 @@
+TB_ENTITY = kirsch_tb
+TB_ARCH = main
+#------------------------------------------------------------------
+# for dead-or-alive test
+#
+# TB_VHDL = string_pkg.vhd kirsch_synth_pkg.vhd kirsch_unsynth_pkg.vhd kirsch_doa_tb.vhd
+#------------------------------------------------------------------
+# for normal test
+#
+TB_VHDL = string_pkg.vhd kirsch_synth_pkg.vhd kirsch_unsynth_pkg.vhd kirsch_tb.vhd
+SIM_SCRIPT = kirsch_tb.sim
+
+DESIGN_ENTITY = kirsch
+DESIGN_ARCH = main
+#------------------------------------------------------------------
+# for spec
+# DESIGN_VHDL = mem.vhd kirsch_synth_pkg.vhd string_pkg.vhd kirsch_unsynth_pkg.vhd kirsch_spec.vhd
+#------------------------------------------------------------------
+# for normal kirsch
+DESIGN_VHDL = mem.vhd kirsch_synth_pkg.vhd kirsch.vhd
