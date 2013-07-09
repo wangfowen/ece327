@@ -5,11 +5,15 @@ use ieee.numeric_std.all;
 package state_pkg is
   subtype state_ty is std_logic_vector(2 downto 0);
   constant S0 : state_ty := "001";
-  constant S1 : state_ty := "010";
-  constant S2 : state_ty := "100";
+
+  subtype stage_state_ty is std_logic_vector(3 downto 0);
 
   subtype mem_data is unsigned(7 downto 0);
-  type mem_data_vector is array(natural range <>) of mem_data;
+  type mem_data_vector is array(2 downto 0) of mem_data;
+  type mem_data_crazy_vector is array(natural range <>) of mem_data_vector;
+  
+  --subtype wren_data is unsigned(3 downto 0);
+  --type wren_data_vector is array(natural range <>) of wren_data;
 end state_pkg;
 
 library ieee;
@@ -48,12 +52,20 @@ entity kirsch is
 end entity;
 
 architecture main of kirsch is
-  signal q                        : mem_data_vector(2 downto 0);
-  signal mem_row_index                : state_ty;
+  signal counter                  : unsigned(16 downto 0); -- 9 MSB is the row count, 8 LSB is the column count
+  signal col_addr                 : mem_data_vector; -- done (hold i-2, i-1, i)
+  signal stage1_valid             : stage_state_ty; -- todo
+  signal stage2_valid             : stage_state_ty; -- todo
+  
+  signal mem_rd                   : mem_data_crazy_vector(2 downto 0);
+  --signal wren_mem                 : wren_data_vector(2 downto 0);
+
   signal i_valid_and_mem_row_index    : state_ty;
+  signal mem_row_index                : state_ty;
+
+
   signal mode                     : mode_ty;
   signal goto_init                : std_logic;
-  signal counter                  : unsigned(16 downto 0); -- 9 MSB is the row count, 8 LSB is the column count
   signal row_count                : unsigned(7 downto 0);
 
    -- A function to rotate left (rol) a vector by n bits
@@ -78,17 +90,24 @@ begin
   goto_init <= '1' when i_reset = '1' or counter(16) = '1' else
                '0';
 
-  MEM_CPY : for I in 0 to 2 generate
+  SET_WREN : for I in 0 to 2 generate
     i_valid_and_mem_row_index(I) <= i_valid and mem_row_index(I);
-    mem : entity work.mem(main)
-    port map (
-      address => std_logic_vector(counter(7 downto 0)), -- just column counter
-      clock => i_clock,
-      data => i_pixel,
-      wren => i_valid_and_mem_row_index(I),
-      unsigned(q) => q(I)
-    );
-  end generate MEM_CPY;
+  end generate SET_WREN;
+
+  MEM_REDUN : for J in 0 to 2 generate
+    MEM_CPY : for I in 0 to 2 generate
+      mem : entity work.mem(main)
+      port map (
+        address => std_logic_vector(col_addr(J)),
+        clock => i_clock,
+        data => i_pixel,
+        wren => i_valid_and_mem_row_index(I),
+        unsigned(q) => mem_rd(I)(J) -- row/col, note: col is actually a separate mem block
+      );
+    end generate MEM_CPY;
+  end generate MEM_REDUN;
+
+  -- add dir mem
 
   increment_counters : process
   begin
@@ -111,6 +130,19 @@ begin
     end if;
   end process;
 
+  col_addr(2) <= counter(7 downto 0);
+  col_last_three_counters : process
+  begin
+    wait until rising_edge(i_clock);
+    if (goto_init = '1') then
+      col_addr(0) <= to_unsigned(0, 8);
+      col_addr(1) <= to_unsigned(0, 8);
+    elsif (i_valid = '1') then
+      col_addr(0) <= col_addr(1);
+      col_addr(1) <= col_addr(2);
+    end if;
+  end process;
+
   set_mode : process
   begin
     wait until rising_edge(i_clock);
@@ -125,7 +157,7 @@ begin
     wait until rising_edge(i_clock);
     if (goto_init = '1') then
 
-    elsif (i_valid = '1' and counter > 771) then -- Once we reach row 3 column 3, start doing convolution table stuff
+    elsif (i_valid = '1' and counter(7 downto 0) > 3 and counter(16 downto 8) > 3) then -- Once we reach row 3 column 3, start doing convolution table stuff
 
     end if;
   end process;
@@ -135,7 +167,7 @@ begin
   begin
     wait until rising_edge(i_clock);
     o_valid <= '1';
-    o_row <= std_logic_vector(row_count);
+    --o_row <= std_logic_vector(row_count);
     --TODO: output correct things
     o_edge <= '0';
     o_dir <= "000";
@@ -148,4 +180,6 @@ begin
   end process;
 
   o_mode <= mode;
+
+  o_row <= std_logic_vector(col_addr(0));
 end architecture;
