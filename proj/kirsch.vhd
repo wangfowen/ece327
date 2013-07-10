@@ -10,10 +10,7 @@ package state_pkg is
 
   subtype mem_data is unsigned(7 downto 0);
   type mem_data_vector is array(2 downto 0) of mem_data;
-  type mem_data_crazy_vector is array(natural range <>) of mem_data_vector;
-  
-  --subtype wren_data is unsigned(3 downto 0);
-  --type wren_data_vector is array(natural range <>) of wren_data;
+  type mem_data_crazy_vector is array(3 downto 0) of mem_data_vector;
 end state_pkg;
 
 library ieee;
@@ -53,16 +50,25 @@ end entity;
 
 architecture main of kirsch is
   signal counter                  : unsigned(16 downto 0); -- 9 MSB is the row count, 8 LSB is the column count
-  signal col_addr                 : mem_data_vector; -- done (hold i-2, i-1, i)
-  signal stage1_valid             : stage_state_ty; -- todo
-  signal stage2_valid             : stage_state_ty; -- todo
+  signal stage1_v             : stage_state_ty; -- todo
+  signal stage2_v             : stage_state_ty; -- todo
   
-  signal mem_rd                   : mem_data_crazy_vector(2 downto 0);
-  --signal wren_mem                 : wren_data_vector(2 downto 0);
+  signal mem_rd                   : mem_data_vector;
+
+  --signal wr_data                  : mem_data_vector; -- done (hold last 2 values)
+  --signal col_addr                 : mem_data_vector; -- done (hold i-2, i-1, i)
 
   signal i_valid_and_mem_row_index    : state_ty;
   signal mem_row_index                : state_ty;
 
+  signal conv_vars                  : mem_data_crazy_vector;
+  signal c1, d1                     : unsigned (7 downto 0);
+  --signal a1, b1, c1,
+  --       h1, i1, d1, 
+  --       g1, f1, e1,
+  --       a2,
+  --       h2,
+  --       g3                       : unsigned(7 downto 0);
 
   signal mode                     : mode_ty;
   signal goto_init                : std_logic;
@@ -90,24 +96,34 @@ begin
   goto_init <= '1' when i_reset = '1' or counter(16) = '1' else
                '0';
 
-  SET_WREN : for I in 0 to 2 generate
-    i_valid_and_mem_row_index(I) <= i_valid and mem_row_index(I);
-  end generate SET_WREN;
+  --SET_WREN : for I in 0 to 2 generate
+  --end generate SET_WREN;
 
-  MEM_REDUN : for J in 0 to 2 generate
-    MEM_CPY : for I in 0 to 2 generate
-      mem : entity work.mem(main)
-      port map (
-        address => std_logic_vector(col_addr(J)),
-        clock => i_clock,
-        data => i_pixel,
-        wren => i_valid_and_mem_row_index(I),
-        unsigned(q) => mem_rd(I)(J) -- row/col, note: col is actually a separate mem block
-      );
-    end generate MEM_CPY;
-  end generate MEM_REDUN;
+  --MEM_REDUN : for J in 0 to 2 generate
+  MEM_CPY : for I in 0 to 2 generate
+    i_valid_and_mem_row_index(I) <= i_valid and mem_row_index(I); 
+    mem : entity work.mem(main)
+    port map (
+      address => std_logic_vector(counter(7 downto 0)),
+      clock => i_clock,
+      data => i_pixel,
+      wren => i_valid_and_mem_row_index(I),
+      unsigned(q) => mem_rd(I) --mem_rd(I)(J) 
+    );
+  end generate MEM_CPY;
+  --end generate MEM_REDUN;
 
-  -- add dir mem
+  -- todo: Replace this mux with tristate
+  c1 <= (mem_rd(0) and (7 downto 0 => mem_row_index(2))) 
+    or (mem_rd(2) and (7 downto 0 => mem_row_index(1))) 
+    or (mem_rd(1) and (7 downto 0 => mem_row_index(0)));
+
+  d1 <= (mem_rd(0) and (7 downto 0 => mem_row_index(2))) 
+    or (mem_rd(2) and (7 downto 0 => mem_row_index(1))) 
+    or (mem_rd(1) and (7 downto 0 => mem_row_index(0)));
+
+  
+  -- TODO: add dir mem. Idea is simple, we need the old version of the memory for second stage of pipeline
 
   increment_counters : process
   begin
@@ -115,6 +131,7 @@ begin
     if (goto_init = '1') then
       counter <= to_unsigned(0, 17);
     elsif (i_valid = '1') then
+      -- TODO: When valid bits are added, only increment once we reach S1 valid bit 3
       counter <= counter + 1;
     end if;
   end process;
@@ -130,16 +147,45 @@ begin
     end if;
   end process;
 
-  col_addr(2) <= counter(7 downto 0);
-  col_last_three_counters : process
+  -- TODO: make for generate from 0 to 1
+  --col_addr(2) <= counter(7 downto 0);
+  -- <= unsigned(i_pixel);
+  last_three_mem : process
   begin
     wait until rising_edge(i_clock);
     if (goto_init = '1') then
-      col_addr(0) <= to_unsigned(0, 8);
-      col_addr(1) <= to_unsigned(0, 8);
-    elsif (i_valid = '1') then
-      col_addr(0) <= col_addr(1);
-      col_addr(1) <= col_addr(2);
+      
+      --col_addr(0) <= to_unsigned(0, 8);
+      --col_addr(1) <= to_unsigned(0, 8);
+
+      --wr_data(0) <= to_unsigned(0, 8);
+      --wr_data(1) <= to_unsigned(0, 8);
+    elsif (i_valid = '1') then -- or valid bit 1 of stage 2
+
+      conv_vars(3)(0) <= c1;
+      conv_vars(3)(1) <= d1;
+      conv_vars(3)(2) <= unsigned(i_pixel);
+
+    elsif (i_valid = '0') then -- i_valid or stage 4
+
+      conv_vars(2)(0) <= conv_vars(3)(0);
+      conv_vars(2)(1) <= conv_vars(3)(1);
+      conv_vars(2)(2) <= conv_vars(3)(2);
+      
+      conv_vars(1)(0) <= conv_vars(2)(0);
+      conv_vars(1)(1) <= conv_vars(2)(1);
+      conv_vars(1)(2) <= conv_vars(2)(2);
+
+      conv_vars(0)(0) <= conv_vars(1)(0);
+      conv_vars(0)(1) <= conv_vars(1)(1);
+      conv_vars(0)(2) <= conv_vars(1)(2);
+
+
+      --col_addr(0) <= col_addr(1);
+      --col_addr(1) <= col_addr(2);
+
+      --wr_data(0) <= wr_data(1);
+      --wr_data(1) <= wr_data(2);
     end if;
   end process;
 
@@ -156,9 +202,10 @@ begin
   begin
     wait until rising_edge(i_clock);
     if (goto_init = '1') then
-
-    elsif (i_valid = '1' and counter(7 downto 0) > 3 and counter(16 downto 8) > 3) then -- Once we reach row 3 column 3, start doing convolution table stuff
-
+    o_dir <= "000";
+    elsif (i_valid = '1' and counter(7 downto 0) >= 2 and counter(16 downto 8) >= 2) then -- Once we reach row 3 column 3, start doing convolution table stuff
+      
+    o_dir <= "111";
     end if;
   end process;
 
@@ -169,8 +216,6 @@ begin
     o_valid <= '1';
     --o_row <= std_logic_vector(row_count);
     --TODO: output correct things
-    o_edge <= '0';
-    o_dir <= "000";
 
     if (goto_init = '1' or row_count = 255) then
       row_count <= to_unsigned(0, 8);
@@ -180,6 +225,8 @@ begin
   end process;
 
   o_mode <= mode;
-
-  o_row <= std_logic_vector(col_addr(0));
+  
+  -- For debugging
+  o_edge <= '1' when counter(8) = '1' else '0';
+  o_row <= std_logic_vector(counter(7 downto 0));
 end architecture;
