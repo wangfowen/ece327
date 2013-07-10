@@ -113,17 +113,14 @@ begin
   end generate MEM_CPY;
   --end generate MEM_REDUN;
 
-  -- todo: Replace this mux with tristate
+  -- todo: Replace this mux with tristate if possible
   c1 <= (mem_rd(0) and (7 downto 0 => mem_row_index(2))) 
     or (mem_rd(2) and (7 downto 0 => mem_row_index(1))) 
     or (mem_rd(1) and (7 downto 0 => mem_row_index(0)));
 
-  d1 <= (mem_rd(0) and (7 downto 0 => mem_row_index(2))) 
-    or (mem_rd(2) and (7 downto 0 => mem_row_index(1))) 
-    or (mem_rd(1) and (7 downto 0 => mem_row_index(0)));
-
-  
-  -- TODO: add dir mem. Idea is simple, we need the old version of the memory for second stage of pipeline
+  d1 <= (mem_rd(1) and (7 downto 0 => mem_row_index(2))) 
+    or (mem_rd(0) and (7 downto 0 => mem_row_index(1))) 
+    or (mem_rd(2) and (7 downto 0 => mem_row_index(0)));
 
   increment_counters : process
   begin
@@ -146,41 +143,41 @@ begin
       mem_row_index <= mem_row_index rol 1;
     end if;
   end process;
+ 
+  latest_mem_rep_j : for J in 0 to 2 generate
+    latest_mem_rep_i : for I in 0 to 2 generate
+      latest_mem: process
+      begin
+        wait until rising_edge(i_clock);
+        if (goto_init = '1') then
+          conv_vars(J)(I) <= to_unsigned(0, 8);
+        elsif (i_valid = '1') then
+          conv_vars(J)(I) <= conv_vars(J+1)(I);
+        end if;
+      end process;
+    end generate latest_mem_rep_i;
+  end generate latest_mem_rep_j;
 
-  -- TODO: make for generate from 0 to 1
-  --col_addr(2) <= counter(7 downto 0);
-  -- <= unsigned(i_pixel);
-  last_three_mem : process
+  latest_col: process
   begin
     wait until rising_edge(i_clock);
+    
     if (goto_init = '1') then
-      
+      conv_vars(3)(0) <= to_unsigned(0, 8);
+      conv_vars(3)(1) <= to_unsigned(0, 8);
+      conv_vars(3)(2) <= to_unsigned(0, 8);
+
       --col_addr(0) <= to_unsigned(0, 8);
       --col_addr(1) <= to_unsigned(0, 8);
 
       --wr_data(0) <= to_unsigned(0, 8);
       --wr_data(1) <= to_unsigned(0, 8);
-    elsif (i_valid = '1') then -- or valid bit 1 of stage 2
+    elsif (i_valid = '1') then
 
       conv_vars(3)(0) <= c1;
       conv_vars(3)(1) <= d1;
       conv_vars(3)(2) <= unsigned(i_pixel);
-
-    elsif (i_valid = '0') then -- i_valid or stage 4
-
-      conv_vars(2)(0) <= conv_vars(3)(0);
-      conv_vars(2)(1) <= conv_vars(3)(1);
-      conv_vars(2)(2) <= conv_vars(3)(2);
       
-      conv_vars(1)(0) <= conv_vars(2)(0);
-      conv_vars(1)(1) <= conv_vars(2)(1);
-      conv_vars(1)(2) <= conv_vars(2)(2);
-
-      conv_vars(0)(0) <= conv_vars(1)(0);
-      conv_vars(0)(1) <= conv_vars(1)(1);
-      conv_vars(0)(2) <= conv_vars(1)(2);
-
-
       --col_addr(0) <= col_addr(1);
       --col_addr(1) <= col_addr(2);
 
