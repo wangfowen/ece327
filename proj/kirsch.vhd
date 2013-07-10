@@ -7,7 +7,7 @@ package state_pkg is
   constant S0 : state_ty := "001";
 
   subtype stage_state_ty is std_logic_vector(3 downto 0);
-  constant S0 : state_state_ty := "0000";
+  constant SS0 : stage_state_ty := "0000";
 
   subtype mem_data is unsigned(7 downto 0);
   type mem_data_vector is array(2 downto 0) of mem_data;
@@ -81,6 +81,13 @@ architecture main of kirsch is
   is
   begin
     return std_logic_vector( unsigned(a) rol n );
+  end function;
+
+  function "sll" ( a : std_logic_vector; n : natural )
+  return std_logic_vector
+  is
+  begin
+    return std_logic_vector( unsigned(a) sll n );
   end function;
 begin
   debug_num_5 <= X"E";
@@ -199,10 +206,11 @@ begin
   begin
     wait until rising_edge(i_clock);
     if (goto_init = '1') then
-      stage1_v <= S0;
+      stage1_v <= SS0;
     elsif (i_valid = '1') then
-      stage1_v <= stage1_v rol 1;
-
+      stage1_v(0) <= '1';
+    else
+      stage1_v <= stage1_v sll 1;
     end if;
   end process;
 
@@ -210,9 +218,11 @@ begin
   begin
     wait until rising_edge(i_clock);
     if (goto_init = '1') then
-      stage1_v <= S0;
+      stage2_v <= SS0;
     elsif (stage1_v(3) = '1') then
-
+      stage2_v(0) <= '1';
+    else
+      stage2_v <= stage2_v sll 1;
     end if;
   end process;
 
