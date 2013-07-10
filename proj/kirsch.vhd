@@ -205,24 +205,22 @@ begin
   stage_1 : process
   begin
     wait until rising_edge(i_clock);
+      stage1_v <= stage1_v sll 1;
     if (goto_init = '1') then
       stage1_v <= SS0;
     elsif (i_valid = '1') then
       stage1_v(0) <= '1';
-    else
-      stage1_v <= stage1_v sll 1;
     end if;
   end process;
 
   stage_2 : process
   begin
     wait until rising_edge(i_clock);
+      stage2_v <= stage2_v sll 1;
     if (goto_init = '1') then
       stage2_v <= SS0;
     elsif (stage1_v(3) = '1') then
       stage2_v(0) <= '1';
-    else
-      stage2_v <= stage2_v sll 1;
     end if;
   end process;
 
@@ -256,5 +254,7 @@ begin
 
   -- For debugging
   o_edge <= '1' when counter(8) = '1' else '0';
-  o_row <= std_logic_vector(counter(7 downto 0));
+  --o_row <= std_logic_vector(counter(7 downto 0));
+  o_row(3 downto 0) <= stage2_v;
+  o_row(7 downto 4) <= stage1_v;
 end architecture;
