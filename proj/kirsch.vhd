@@ -205,7 +205,7 @@ begin
   stage_1 : process
   begin
     wait until rising_edge(i_clock);
-      stage1_v <= stage1_v sll 1;
+    stage1_v <= stage1_v sll 1;
     if (goto_init = '1') then
       stage1_v <= SS0;
     elsif (i_valid = '1') then
@@ -216,7 +216,7 @@ begin
   stage_2 : process
   begin
     wait until rising_edge(i_clock);
-      stage2_v <= stage2_v sll 1;
+    stage2_v <= stage2_v sll 1;
     if (goto_init = '1') then
       stage2_v <= SS0;
     elsif (stage1_v(3) = '1') then
