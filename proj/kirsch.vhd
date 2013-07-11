@@ -256,7 +256,6 @@ begin
   g <= conv_vars(2)(0); f <= conv_vars(2)(1); e <= conv_vars(2)(2);
 
 --------------------- STAGE1 ------------------------
-  -- Done: R1, R2, R3, R4, R5, R6
   
   R1_S1_proc : process begin
     wait until rising_edge(i_clock);
@@ -377,19 +376,30 @@ begin
                   d when stage1_v(1) = '1' else
                   f when stage1_v(2) = '1' else
                   h when stage1_v(3) = '1';
-                 
+  
+  -- todo: maybe use a GE instead of sub. Will need to test.              
   sub_s1 <= signed('0' & sub_src1_s1) - signed('0' & sub_src2_s1);
   sum1_s1 <= ('0' & sum1_src1_s1) + ('0' & sum1_src2_s1);
   sum2_s1 <= ('0' & sum2_src1_s1) + ('0' & sum2_src2_s1);
 
 --------------------- STAGE2 ------------------------
 
+  -- alright dude, here are a few pointers:
+  -- 1. Check DFD_Real in ece327 google drive folder
+  -- 2. Re-use registers R10, R4, R9, R5, R6 for ONLy the first clock cycle of S2
+  -- 3. Put in new registers in DFD real doc for stage 2
+  -- 4. Look at my code for stage 1 as an example
+  -- 5. Instead of a "max" block, use what I did for R7,8,9,10. 
+  -- 6. dir5 = max(max1, max2) will choose dir1 or dir2 respectively. dir6 is the same on max3/max4 for dir3,4
+  -------- THat's why we saved dir1, dir2, dir3, dir4, and that is the insight behind my discovery. ORDER is preserved!
+  -- 7. dir7 = max(max5, max6) will choose between dir5 and dir6
+  -- 8. Be smart about how you choose your registers... MINIMIZE muxes
+
   -- template 
   stage2_logic : process begin
     wait until rising_edge(i_clock);
-    if (goto_init = '1') then
    
-    elsif (stage1_v(3) = '1') then
+    if (stage1_v(3) = '1') then
      
     elsif (stage2_v(0) = '1') then
     
@@ -402,9 +412,6 @@ begin
    
     end if;
   end process;
-
-
-
 
 
 --------------------- END ------------------------
