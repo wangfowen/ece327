@@ -54,10 +54,12 @@ architecture main of kirsch is
   signal stage1_v             : stage_state_ty; -- todo
   signal stage2_v             : stage_state_ty; -- todo
 
+  --latest val in the 3 rows
   signal mem_rd                   : mem_data_vector;
   signal i_valid_and_mem_row_index    : state_ty;
   signal mem_row_index                : state_ty;
 
+  --3x3 conv table
   signal conv_vars                  : mem_data_crazy_vector;
   signal rd_c, rd_d                 : unsigned (7 downto 0);
 
@@ -67,16 +69,16 @@ architecture main of kirsch is
 
 --------------------- STAGE1 ------------------------
   signal r1_s1                  : unsigned (8 downto 0);
-  signal r2_s1                  : unsigned (8 downto 0); 
-  signal r3_s1                  : unsigned (8 downto 0); 
-  signal r4_s1                  : unsigned (8 downto 0); 
-  signal r5_s1                  : unsigned (9 downto 0); 
-  signal r6_s1                  : unsigned (9 downto 0); 
+  signal r2_s1                  : unsigned (8 downto 0);
+  signal r3_s1                  : unsigned (8 downto 0);
+  signal r4_s1                  : unsigned (8 downto 0);
+  signal r5_s1                  : unsigned (9 downto 0);
+  signal r6_s1                  : unsigned (9 downto 0);
   signal r7_s1                  : unsigned (7 downto 0);
   signal r8_s1                  : unsigned (7 downto 0);
   signal r9_s1                  : unsigned (7 downto 0);
   signal r10_s1                 : unsigned (7 downto 0);
-  
+
   signal sub_src1_s1            : unsigned (7 downto 0);
   signal sub_src2_s1            : unsigned (7 downto 0);
   signal sub_s1                 : signed (8 downto 0);
@@ -93,17 +95,31 @@ architecture main of kirsch is
   signal dir4_s1                : unsigned (2 downto 0);
 
 --------------------- STAGE2 ------------------------
+  signal r1_s2                  : unsigned (12 downto 0);
+  signal r2_s2                  : unsigned (12 downto 0);
+  signal r3_s2                  : unsigned (12 downto 0);
+  signal r4_s2                  : unsigned (9 downto 0);
 
-
+  signal sum1_src1_s2           : unsigned (12 downto 0);
+  signal sum1_src2_s2           : unsigned (12 downto 0);
+  signal sum1_s2                : unsigned (12 downto 0);
+  signal sum2_src1_s2           : unsigned (9 downto 0);
+  signal sum2_src2_s2           : unsigned (9 downto 0);
+  signal sum2_s2                : unsigned (9 downto 0);
+  signal sub1_src1_s2            : unsigned (9 downto 0);
+  signal sub1_src2_s2            : unsigned (9 downto 0);
+  signal sub1_s2                 : signed (9 downto 0);
+  signal sub2_src1_s2            : unsigned (12 downto 0);
+  signal sub2_src2_s2            : unsigned (12 downto 0);
+  signal sub2_s2                 : signed (12 downto 0);
 
 --------------------- ENDVAR ------------------------
 
   signal valid_parcel1            : std_logic;
   signal valid_parcel2            : std_logic;
   signal goto_init                : std_logic;
-  
+
   signal mode                     : mode_ty;
-  signal row_count                : unsigned(7 downto 0);
 
    -- A function to rotate left (rol) a vector by n bits
   function "rol" ( a : std_logic_vector; n : natural )
@@ -149,10 +165,12 @@ begin
   end generate MEM_CPY;
 
   -- todo: Replace this mux with tristate if possible
+  --next row's most recent value
   rd_c <= (mem_rd(0) and (7 downto 0 => mem_row_index(2)))
     or (mem_rd(2) and (7 downto 0 => mem_row_index(1)))
     or (mem_rd(1) and (7 downto 0 => mem_row_index(0)));
 
+  --prev row's most recent value
   rd_d <= (mem_rd(1) and (7 downto 0 => mem_row_index(2)))
     or (mem_rd(0) and (7 downto 0 => mem_row_index(1)))
     or (mem_rd(2) and (7 downto 0 => mem_row_index(0)));
@@ -175,6 +193,7 @@ begin
     end if;
   end process;
 
+  --rotate the conv table for the different directions
   latest_mem_rep_i : for I in 0 to 2 generate
     latest_mem_rep_j : for J in 0 to 1 generate
       latest_mem: process begin
@@ -188,6 +207,7 @@ begin
     end generate latest_mem_rep_j;
   end generate latest_mem_rep_i;
 
+  --update the conv table with the new values
   latest_col: process begin
     wait until rising_edge(i_clock);
     if (goto_init = '1') then
@@ -200,7 +220,7 @@ begin
       conv_vars(2)(2) <= unsigned(i_pixel);
     end if;
   end process;
-  
+
   stage_1_v_bits : process
   begin
     wait until rising_edge(i_clock);
@@ -223,6 +243,7 @@ begin
     end if;
   end process;
 
+  -- if within the inner part, is valid to output
   detect_edge_stage_1 : process begin
     wait until rising_edge(i_clock);
     if (i_valid = '1') then
@@ -235,6 +256,7 @@ begin
     end if;
   end process;
 
+  -- at the last part of stage 1, pass to stage 2
   carry_over_valid : process begin
     wait until rising_edge(i_clock);
     if (stage1_v(3) = '1') then
@@ -242,6 +264,7 @@ begin
     end if;
   end process;
 
+  -- at last part of stage 2, output validity
   final_valid : process begin
     wait until rising_edge(i_clock);
     if (goto_init = '1' or stage2_v(3) = '0') then
@@ -256,7 +279,7 @@ begin
   g <= conv_vars(2)(0); f <= conv_vars(2)(1); e <= conv_vars(2)(2);
 
 --------------------- STAGE1 ------------------------
-  
+
   R1_S1_proc : process begin
     wait until rising_edge(i_clock);
     if (stage1_v(0) = '1') then
@@ -267,31 +290,31 @@ begin
   R2_S1_proc : process begin
     wait until rising_edge(i_clock);
     if (stage1_v(0) = '1') then
-      r2_s1 <= sum2_s1(8 downto 0); 
+      r2_s1 <= sum2_s1(8 downto 0);
     end if;
   end process;
-  
+
   R3_S1_proc : process begin
     wait until rising_edge(i_clock);
     if (stage1_v(2) = '1') then
       r3_s1 <= r5_s1(8 downto 0);
     end if;
   end process;
- 
+
   R4_S1_proc : process begin
     wait until rising_edge(i_clock);
     if (stage1_v(2) = '1') then
       r4_s1 <= r6_s1(8 downto 0);
     end if;
   end process;
-  
+
   R5_S1_proc : process begin
     wait until rising_edge(i_clock);
     if (stage1_v(1) = '1' or stage1_v(2) = '1') then
       r5_s1 <= sum1_s1;
     end if;
   end process;
-  
+
   R6_S1_proc : process begin
     wait until rising_edge(i_clock);
     if (stage1_v(1) = '1' or stage1_v(2) = '1') then
@@ -303,10 +326,10 @@ begin
     wait until rising_edge(i_clock);
     if (stage1_v(0) = '1') then
       if (sub_s1(8) = '1') then
-        dir1_s1 <= "100"; 
+        dir1_s1 <= "100";
         r7_s1 <= b;
       else
-        dir1_s1 <= "001"; 
+        dir1_s1 <= "001";
         r7_s1 <= g;
       end if;
     end if;
@@ -316,10 +339,10 @@ begin
     wait until rising_edge(i_clock);
     if (stage1_v(1) = '1') then
       if (sub_s1(8) = '1') then
-        dir2_s1 <= "110"; 
+        dir2_s1 <= "110";
         r8_s1 <= d;
       else
-        dir2_s1 <= "010"; 
+        dir2_s1 <= "010";
         r8_s1 <= a;
       end if;
     end if;
@@ -329,10 +352,10 @@ begin
     wait until rising_edge(i_clock);
     if (stage1_v(2) = '1') then
       if (sub_s1(8) = '1') then
-        dir3_s1 <= "101"; 
+        dir3_s1 <= "101";
         r9_s1 <= f;
       else
-        dir3_s1 <= "000"; 
+        dir3_s1 <= "000";
         r9_s1 <= c;
       end if;
     end if;
@@ -342,15 +365,15 @@ begin
     wait until rising_edge(i_clock);
     if (stage1_v(3) = '1') then
       if (sub_s1(8) = '1') then
-        dir4_s1 <= "111"; 
+        dir4_s1 <= "111";
         r10_s1 <= h;
       else
-        dir4_s1 <= "011"; 
+        dir4_s1 <= "011";
         r10_s1 <= e;
       end if;
     end if;
   end process;
-  
+
 -- Todo: replace dis shit with tri-state
   sum1_src1_s1 <= '0' & h when stage1_v(0) = '1' else
                   '0' & d when stage1_v(1) = '1' else
@@ -376,8 +399,8 @@ begin
                   d when stage1_v(1) = '1' else
                   f when stage1_v(2) = '1' else
                   h when stage1_v(3) = '1';
-  
-  -- todo: maybe use a GE instead of sub. Will need to test.              
+
+  -- todo: maybe use a GE instead of sub. Will need to test.
   sub_s1 <= signed('0' & sub_src1_s1) - signed('0' & sub_src2_s1);
   sum1_s1 <= ('0' & sum1_src1_s1) + ('0' & sum1_src2_s1);
   sum2_s1 <= ('0' & sum2_src1_s1) + ('0' & sum2_src2_s1);
@@ -389,48 +412,81 @@ begin
   -- 2. Re-use registers R10, R4, R9, R5, R6 for ONLy the first clock cycle of S2
   -- 3. Put in new registers in DFD real doc for stage 2
   -- 4. Look at my code for stage 1 as an example
-  -- 5. Instead of a "max" block, use what I did for R7,8,9,10. 
+  -- 5. Instead of a "max" block, use what I did for R7,8,9,10.
   -- 6. dir5 = max(max1, max2) will choose dir1 or dir2 respectively. dir6 is the same on max3/max4 for dir3,4
   -------- THat's why we saved dir1, dir2, dir3, dir4, and that is the insight behind my discovery. ORDER is preserved!
   -- 7. dir7 = max(max5, max6) will choose between dir5 and dir6
   -- 8. Be smart about how you choose your registers... MINIMIZE muxes
 
-  -- template 
-  stage2_logic : process begin
+  R1_S2_proc : process begin
     wait until rising_edge(i_clock);
-   
-    if (stage1_v(3) = '1') then
-     
-    elsif (stage2_v(0) = '1') then
-    
-    elsif (stage2_v(1) = '1') then
-    
-    elsif (stage2_v(2) = '1') then
-
-    elsif (stage2_v(3) = '1') then
-    -- careful not to mix registers here (Remember unused)
-   
+    if (stage1_v(3) = '1' or stage2_v(0) = '1') then
+      r1_s2 <= "000" & sum1_s1;
+    else
+      r1_s2 <= sum1_s2;
     end if;
   end process;
 
+  R2_S2_proc : process begin
+    wait until rising_edge(i_clock);
+    if (stage1_v(3) = '1' or stage2_v(0) = '1') then
+      r2_s2 <= "000" & sum2_s1;
+    else
+      if (sub1_s2(9) = '1') then
+        if (stage2_v(1) = '1') then
+          r2_s2 <= "000" & sum2_s2;
+        end if;
+      else
+        r2_s2 <= r3_s2;
+      end if;
+    end if;
+  end process;
+
+  R3_S2_proc : process begin
+    wait until rising_edge(i_clock);
+    if (stage2_v(0) = '1') then
+      r3_s2 <= sum1_s2;
+    elsif (stage2_v(1) = '1') then
+      r3_s2 <= "000" & r4_s2;
+    elsif (stage2_v(2) = '1') then
+      r3_s2 <= r2_s2 sll 3;
+    end if;
+  end process;
+
+  R4_S2_proc : process begin
+    wait until rising_edge(i_clock);
+    if (stage2_v(0) = '1') then
+      if (sub1_s2(9) = '1') then
+        r4_s2 <= r6_s1;
+      else
+        r4_s2 <= r5_s1;
+      end if;
+    end if;
+  end process;
+
+  sum1_src1_s2 <= "0000" & r3_s1 when stage2_v(0) = '1' else
+                  r1_s2;
+  sum1_src2_s2 <= "00000" & r10_s1 when stage2_v(0) = '1' else
+                  r2_s2 when stage2_v(1) = '1' else
+                  r1_s2 sll 1;
+  sum2_src1_s2 <= '0' & r4_s1;
+  sum2_src2_s2 <= "00" & r9_s1;
+
+  sub1_src1_s2 <= r5_s1 when stage2_v(0) = '1' else
+                  r3_s2(9 downto 0);
+  sub1_src2_s2 <= r6_s1 when stage2_v(0) = '1' else
+                  sum2_s2 when stage2_v(1) = '1' else
+                  r2_s2(9 downto 0);
+  sub2_src1_s2 <= r3_s2;
+  sub2_src2_s2 <= r1_s2;
+
+  -- todo: maybe use a GE instead of sub. Will need to test.
+  sub1_s2 <= signed(sub1_src1_s2) - signed(sub1_src2_s2);
+  sub2_s2 <= signed(sub2_src1_s2) - signed(sub2_src2_s2);
+  sum1_s2 <= (sum1_src1_s2) + (sum1_src2_s2);
+  sum2_s2 <= (sum2_src1_s2) + (sum2_src2_s2);
 
 --------------------- END ------------------------
-
-  -- Stephane: code below, wut? 
- 
-  --TODO: how pipeline so this happens at end of other stages..?
-  detect_edge_last_stage : process
-  begin
-    wait until rising_edge(i_clock);
-    --o_row <= std_logic_vector(row_count);
-    --TODO: output correct things
-
-    if (goto_init = '1' or row_count = 255) then
-      row_count <= to_unsigned(0, 8);
-    else
-      row_count <= row_count + 1;
-    end if;
-  end process;
 
 --  set_mode : process
 --  begin
@@ -440,7 +496,7 @@ begin
 --    end if;
 --    --TOOD: when set mode to busy? idle?
 --  end process;
-  
+
   o_mode <= mode;
 
   -- For debugging
