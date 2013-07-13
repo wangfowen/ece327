@@ -68,50 +68,50 @@ architecture main of kirsch is
          g, f, e                 : unsigned(7 downto 0);
 
 --------------------- STAGE1 ------------------------
-  signal r1_s1                  : unsigned (8 downto 0);
-  signal r2_s1                  : unsigned (8 downto 0);
-  signal r3_s1                  : unsigned (8 downto 0);
-  signal r4_s1                  : unsigned (8 downto 0);
-  signal r5_s1                  : unsigned (9 downto 0);
-  signal r6_s1                  : unsigned (9 downto 0);
-  signal r7_s1                  : unsigned (7 downto 0);
-  signal r8_s1                  : unsigned (7 downto 0);
-  signal r9_s1                  : unsigned (7 downto 0);
-  signal r10_s1                 : unsigned (7 downto 0);
+  signal r1                  : unsigned (8 downto 0);
+  signal r2                  : unsigned (8 downto 0);
+  signal r3                  : unsigned (8 downto 0);
+  signal r4                  : unsigned (8 downto 0);
+  signal r5                  : unsigned (9 downto 0);
+  signal r6                  : unsigned (9 downto 0);
+  signal r7                  : unsigned (7 downto 0);
+  signal r8                  : unsigned (7 downto 0);
+  signal r9                  : unsigned (7 downto 0);
+  signal r10                 : unsigned (7 downto 0);
 
-  signal sub_src1_s1            : unsigned (7 downto 0);
-  signal sub_src2_s1            : unsigned (7 downto 0);
-  signal sub_s1                 : signed (8 downto 0);
-  signal sum1_src1_s1           : unsigned (8 downto 0);
-  signal sum1_src2_s1           : unsigned (8 downto 0);
-  signal sum1_s1                : unsigned (9 downto 0);
-  signal sum2_src1_s1           : unsigned (8 downto 0);
-  signal sum2_src2_s1           : unsigned (8 downto 0);
-  signal sum2_s1                : unsigned (9 downto 0);
+  signal sub1_src1            : unsigned (7 downto 0);
+  signal sub1_src2            : unsigned (7 downto 0);
+  signal sub1                 : signed (8 downto 0);
+  signal sum1_src1           : unsigned (8 downto 0);
+  signal sum1_src2           : unsigned (8 downto 0);
+  signal sum1                : unsigned (9 downto 0);
+  signal sum2_src1           : unsigned (8 downto 0);
+  signal sum2_src2           : unsigned (8 downto 0);
+  signal sum2                : unsigned (9 downto 0);
 
-  signal dir1_s1                : unsigned (2 downto 0);
-  signal dir2_s1                : unsigned (2 downto 0);
-  signal dir3_s1                : unsigned (2 downto 0);
-  signal dir4_s1                : unsigned (2 downto 0);
+  signal dir1                : unsigned (2 downto 0);
+  signal dir2                : unsigned (2 downto 0);
+  signal dir3                : unsigned (2 downto 0);
+  signal dir4                : unsigned (2 downto 0);
 
 --------------------- STAGE2 ------------------------
-  signal r1_s2                  : unsigned (12 downto 0);
-  signal r2_s2                  : unsigned (12 downto 0);
-  signal r3_s2                  : unsigned (12 downto 0);
-  signal r4_s2                  : unsigned (9 downto 0);
+  signal r11                  : unsigned (12 downto 0);
+  signal r12                  : unsigned (12 downto 0);
+  signal r13                  : unsigned (12 downto 0);
+  signal r14                  : unsigned (9 downto 0);
 
-  signal sum1_src1_s2           : unsigned (12 downto 0);
-  signal sum1_src2_s2           : unsigned (12 downto 0);
-  signal sum1_s2                : unsigned (12 downto 0);
-  signal sum2_src1_s2           : unsigned (9 downto 0);
-  signal sum2_src2_s2           : unsigned (9 downto 0);
-  signal sum2_s2                : unsigned (9 downto 0);
-  signal sub1_src1_s2            : unsigned (9 downto 0);
-  signal sub1_src2_s2            : unsigned (9 downto 0);
-  signal sub1_s2                 : signed (9 downto 0);
-  signal sub2_src1_s2            : unsigned (12 downto 0);
-  signal sub2_src2_s2            : unsigned (12 downto 0);
-  signal sub2_s2                 : signed (12 downto 0);
+  signal sum3_src1           : unsigned (12 downto 0);
+  signal sum3_src2           : unsigned (12 downto 0);
+  signal sum3                : unsigned (12 downto 0);
+  signal sum4_src1           : unsigned (9 downto 0);
+  signal sum4_src2           : unsigned (9 downto 0);
+  signal sum4                : unsigned (9 downto 0);
+  signal sub2_src1            : unsigned (9 downto 0);
+  signal sub2_src2            : unsigned (9 downto 0);
+  signal sub2                 : signed (9 downto 0);
+  signal sub3_src1            : unsigned (12 downto 0);
+  signal sub3_src2            : unsigned (12 downto 0);
+  signal sub3                 : signed (12 downto 0);
 
 --------------------- ENDVAR ------------------------
 
@@ -280,130 +280,130 @@ begin
 
 --------------------- STAGE1 ------------------------
 
-  R1_S1_proc : process begin
+  R1_proc : process begin
     wait until rising_edge(i_clock);
     if (stage1_v(0) = '1') then
-      r1_s1 <= sum1_s1(8 downto 0);
+      r1 <= sum1(8 downto 0);
     end if;
   end process;
 
-  R2_S1_proc : process begin
+  R2_proc : process begin
     wait until rising_edge(i_clock);
     if (stage1_v(0) = '1') then
-      r2_s1 <= sum2_s1(8 downto 0);
+      r2 <= sum2(8 downto 0);
     end if;
   end process;
 
-  R3_S1_proc : process begin
+  R3_proc : process begin
     wait until rising_edge(i_clock);
     if (stage1_v(2) = '1') then
-      r3_s1 <= r5_s1(8 downto 0);
+      r3 <= r5(8 downto 0);
     end if;
   end process;
 
-  R4_S1_proc : process begin
+  R4_proc : process begin
     wait until rising_edge(i_clock);
     if (stage1_v(2) = '1') then
-      r4_s1 <= r6_s1(8 downto 0);
+      r4 <= r6(8 downto 0);
     end if;
   end process;
 
-  R5_S1_proc : process begin
+  R5_proc : process begin
     wait until rising_edge(i_clock);
     if (stage1_v(1) = '1' or stage1_v(2) = '1') then
-      r5_s1 <= sum1_s1;
+      r5 <= sum1;
     end if;
   end process;
 
-  R6_S1_proc : process begin
+  R6_proc : process begin
     wait until rising_edge(i_clock);
     if (stage1_v(1) = '1' or stage1_v(2) = '1') then
-      r6_s1 <= sum2_s1;
+      r6 <= sum2;
     end if;
   end process;
 
-  R7_S1_proc : process begin
+  R7_proc : process begin
     wait until rising_edge(i_clock);
     if (stage1_v(0) = '1') then
-      if (sub_s1(8) = '1') then
-        dir1_s1 <= "100";
-        r7_s1 <= b;
+      if (sub1(8) = '1') then
+        dir1 <= "100";
+        r7 <= b;
       else
-        dir1_s1 <= "001";
-        r7_s1 <= g;
+        dir1 <= "001";
+        r7 <= g;
       end if;
     end if;
   end process;
 
-  R8_S1_proc : process begin
+  R8_proc : process begin
     wait until rising_edge(i_clock);
     if (stage1_v(1) = '1') then
-      if (sub_s1(8) = '1') then
-        dir2_s1 <= "110";
-        r8_s1 <= d;
+      if (sub1(8) = '1') then
+        dir2 <= "110";
+        r8 <= d;
       else
-        dir2_s1 <= "010";
-        r8_s1 <= a;
+        dir2 <= "010";
+        r8 <= a;
       end if;
     end if;
   end process;
 
-  R9_S1_proc : process begin
+  R9_proc : process begin
     wait until rising_edge(i_clock);
     if (stage1_v(2) = '1') then
-      if (sub_s1(8) = '1') then
-        dir3_s1 <= "101";
-        r9_s1 <= f;
+      if (sub1(8) = '1') then
+        dir3 <= "101";
+        r9 <= f;
       else
-        dir3_s1 <= "000";
-        r9_s1 <= c;
+        dir3 <= "000";
+        r9 <= c;
       end if;
     end if;
   end process;
 
-  R10_S1_proc : process begin
+  R10_proc : process begin
     wait until rising_edge(i_clock);
     if (stage1_v(3) = '1') then
-      if (sub_s1(8) = '1') then
-        dir4_s1 <= "111";
-        r10_s1 <= h;
+      if (sub1(8) = '1') then
+        dir4 <= "111";
+        r10 <= h;
       else
-        dir4_s1 <= "011";
-        r10_s1 <= e;
+        dir4 <= "011";
+        r10 <= e;
       end if;
     end if;
   end process;
 
 -- Todo: replace dis shit with tri-state
-  sum1_src1_s1 <= '0' & h when stage1_v(0) = '1' else
+  sum1_src1 <= '0' & h when stage1_v(0) = '1' else
                   '0' & d when stage1_v(1) = '1' else
-                  r1_s1;
-  sum1_src2_s1 <= '0' & a when stage1_v(0) = '1' else
+                  r1;
+  sum1_src2 <= '0' & a when stage1_v(0) = '1' else
                   '0' & e when stage1_v(1) = '1' else
-                  '0' & r7_s1 when stage1_v(2) = '1' else
-                  r2_s1 when stage1_v(3) = '1';
-  sum2_src1_s1 <= '0' & b when stage1_v(0) = '1' else
+                  '0' & r7 when stage1_v(2) = '1' else
+                  r2 when stage1_v(3) = '1';
+  sum2_src1 <= '0' & b when stage1_v(0) = '1' else
                   '0' & f when stage1_v(1) = '1' else
-                  r1_s1 when stage1_v(2) = '1' else
-                  r3_s1 when stage1_v(3) = '1';
-  sum2_src2_s1 <= '0' & c when stage1_v(0) = '1' else
+                  r1 when stage1_v(2) = '1' else
+                  r3 when stage1_v(3) = '1';
+  sum2_src2 <= '0' & c when stage1_v(0) = '1' else
                   '0' & g when stage1_v(1) = '1' else
-                  '0' & r8_s1 when stage1_v(2) = '1' else
-                  r4_s1 when stage1_v(3) = '1';
+                  '0' & r8 when stage1_v(2) = '1' else
+                  r4 when stage1_v(3) = '1';
 
-  sub_src1_s1 <=  g when stage1_v(0) = '1' else
+  sub1_src1 <=  g when stage1_v(0) = '1' else
                   a when stage1_v(1) = '1' else
                   c when stage1_v(2) = '1' else
                   e when stage1_v(3) = '1';
-  sub_src2_s1 <=  b when stage1_v(0) = '1' else
+  sub1_src2 <=  b when stage1_v(0) = '1' else
                   d when stage1_v(1) = '1' else
                   f when stage1_v(2) = '1' else
                   h when stage1_v(3) = '1';
 
   -- todo: maybe use a GE instead of sub. Will need to test.
-  sub_s1 <= signed('0' & sub_src1_s1) - signed('0' & sub_src2_s1);
-  sum1_s1 <= ('0' & sum1_src1_s1) + ('0' & sum1_src2_s1);
-  sum2_s1 <= ('0' & sum2_src1_s1) + ('0' & sum2_src2_s1);
+  sub1 <= signed('0' & sub1_src1) - signed('0' & sub1_src2);
+  sum1 <= ('0' & sum1_src1) + ('0' & sum1_src2);
+  sum2 <= ('0' & sum2_src1) + ('0' & sum2_src2);
 
 --------------------- STAGE2 ------------------------
 
@@ -418,73 +418,69 @@ begin
   -- 7. dir7 = max(max5, max6) will choose between dir5 and dir6
   -- 8. Be smart about how you choose your registers... MINIMIZE muxes
 
-  R1_S2_proc : process begin
+  r11_proc : process begin
     wait until rising_edge(i_clock);
-    if (stage1_v(3) = '1' or stage2_v(0) = '1') then
-      r1_s2 <= "000" & sum1_s1;
-    else
-      r1_s2 <= sum1_s2;
+    r11 <= sum3;
+  end process;
+
+  r12_proc : process begin
+    wait until rising_edge(i_clock);
+    if (stage1_v(3) = '1') then
+      r12 <= "000" & r6;
+    elsif (stage2_v(0) = '1') then
+      r12 <= "000" & sum4;
+    elsif (sub2(9) = '0') then
+      r12 <= r13;
     end if;
   end process;
 
-  R2_S2_proc : process begin
+  r13_proc : process begin
     wait until rising_edge(i_clock);
-    if (stage1_v(3) = '1' or stage2_v(0) = '1') then
-      r2_s2 <= "000" & sum2_s1;
-    else
-      if (sub1_s2(9) = '1') then
-        if (stage2_v(1) = '1') then
-          r2_s2 <= "000" & sum2_s2;
-        end if;
-      else
-        r2_s2 <= r3_s2;
-      end if;
-    end if;
-  end process;
-
-  R3_S2_proc : process begin
-    wait until rising_edge(i_clock);
-    if (stage2_v(0) = '1') then
-      r3_s2 <= sum1_s2;
+    if (stage1_v(3) = '1') then
+      r13 <= "000" & r5;
+    elsif (stage2_v(0) = '1') then
+      r13 <= sum3;
     elsif (stage2_v(1) = '1') then
-      r3_s2 <= "000" & r4_s2;
+      r13 <= "000" & r14;
     elsif (stage2_v(2) = '1') then
-      r3_s2 <= r2_s2 sll 3;
-    end if;
-  end process;
-
-  R4_S2_proc : process begin
-    wait until rising_edge(i_clock);
-    if (stage2_v(0) = '1') then
-      if (sub1_s2(9) = '1') then
-        r4_s2 <= r6_s1;
+      if (sub2(9) = '0') then
+        r13 <= r13 sll 3;
       else
-        r4_s2 <= r5_s1;
+        r13 <= r12 sll 3;
       end if;
     end if;
   end process;
 
-  sum1_src1_s2 <= "0000" & r3_s1 when stage2_v(0) = '1' else
-                  r1_s2;
-  sum1_src2_s2 <= "00000" & r10_s1 when stage2_v(0) = '1' else
-                  r2_s2 when stage2_v(1) = '1' else
-                  r1_s2 sll 1;
-  sum2_src1_s2 <= '0' & r4_s1;
-  sum2_src2_s2 <= "00" & r9_s1;
+  r14_proc : process begin
+    wait until rising_edge(i_clock);
+    if (stage2_v(0) = '1') then
+      if (sub2(9) = '0') then
+        r14 <= r13(9 downto 0);
+      else
+        r14 <= r12(9 downto 0);
+      end if;
+    end if;
+  end process;
 
-  sub1_src1_s2 <= r5_s1 when stage2_v(0) = '1' else
-                  r3_s2(9 downto 0);
-  sub1_src2_s2 <= r6_s1 when stage2_v(0) = '1' else
-                  sum2_s2 when stage2_v(1) = '1' else
-                  r2_s2(9 downto 0);
-  sub2_src1_s2 <= r3_s2;
-  sub2_src2_s2 <= r1_s2;
+  sum3_src1 <= "0000" & r3 when stage2_v(0) = '1' else
+               "000" & r5 when stage2_v(1) = '1' else
+               r11;
+  sum3_src2 <= "00000" & r10 when stage2_v(0) = '1' else
+               "000" & r6 when stage2_v(1) = '1' else
+               r11 sll 1;
+  sum4_src1 <= '0' & r4;
+  sum4_src2 <= "00" & r9;
+
+  sub2_src1 <= r13(9 downto 0);
+  sub2_src2 <= r12(9 downto 0);
+  sub3_src1 <= r13;
+  sub3_src2 <= r11;
 
   -- todo: maybe use a GE instead of sub. Will need to test.
-  sub1_s2 <= signed(sub1_src1_s2) - signed(sub1_src2_s2);
-  sub2_s2 <= signed(sub2_src1_s2) - signed(sub2_src2_s2);
-  sum1_s2 <= (sum1_src1_s2) + (sum1_src2_s2);
-  sum2_s2 <= (sum2_src1_s2) + (sum2_src2_s2);
+  sub2 <= signed(sub2_src1) - signed(sub2_src2);
+  sub3 <= signed(sub3_src1) - signed(sub3_src2);
+  sum3 <= (sum3_src1) + (sum3_src2);
+  sum4 <= (sum4_src1) + (sum4_src2);
 
 --------------------- END ------------------------
 
@@ -502,5 +498,5 @@ begin
   -- For debugging
   o_edge <= '1' when counter(8) = '1' else '0';
   --o_row <= std_logic_vector(counter(7 downto 0));
-  o_row <= std_logic_vector(sum1_s1(7 downto 0));
+  o_row <= std_logic_vector(sum1(7 downto 0));
 end architecture;
