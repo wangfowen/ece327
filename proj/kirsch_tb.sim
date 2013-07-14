@@ -10,5 +10,10 @@ add wave sim:/kirsch_tb/out_edge
 add wave sim:/kirsch_tb/out_dir
 
 
+add wave sim:/kirsch_tb/uut/debug_num_0
+add wave sim:/kirsch_tb/uut/debug_num_1
+add wave sim:/kirsch_tb/uut/debug_num_2
+add wave sim:/kirsch_tb/uut/debug_num_3
+
 run 10600000 ns
 
