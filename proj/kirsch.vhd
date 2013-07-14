@@ -131,8 +131,8 @@ architecture main of kirsch is
     return std_logic_vector( unsigned(a) sll n );
   end function;
 begin
-  debug_num_5 <= X"E";
-  debug_num_4 <= X"C";
+  --debug_num_5 <= X"E";
+  --debug_num_4 <= X"C";
   --debug_num_3 <= X"E";
   --debug_num_2 <= X"3";
   --debug_num_1 <= X"2";
@@ -464,10 +464,11 @@ begin
 --  end process;
 
   --o_mode <= mode;
-  debug_num_0 <= std_logic_vector(sub2(3 downto 0));
-  debug_num_1 <= std_logic_vector(sub2(7 downto 4));
-  debug_num_2 <= std_logic_vector(sub2(11 downto 8));
-  debug_num_3 <= std_logic_vector("00" & sub2(13 downto 12));
+  debug_num_0 <= std_logic_vector(r11(3 downto 0));
+  debug_num_1 <= std_logic_vector(r11(7 downto 4));
+  debug_num_2 <= std_logic_vector(r11(11 downto 8));
+  debug_num_3 <= "000" & r11(12);
+  debug_num_5 <= std_logic_vector(dir);
 
   o_row_proc : process begin
     wait until rising_edge(i_clock);
