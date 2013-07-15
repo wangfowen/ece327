@@ -51,8 +51,8 @@ end entity;
 
 architecture main of kirsch is
   signal counter                  : unsigned(16 downto 0); -- 9 MSB is the row count, 8 LSB is the column count
-  signal stage1_v             : stage_state_ty; -- todo
-  signal stage2_v             : stage_state_ty; -- todo
+  signal stage1_v             : stage_state_ty;
+  signal stage2_v             : stage_state_ty;
 
   --latest val in the 3 rows
   signal mem_rd                   : mem_data_vector;
@@ -75,12 +75,12 @@ architecture main of kirsch is
   signal r5                  : unsigned (9 downto 0);
   signal r6                  : unsigned (9 downto 0);
   signal r7                  : unsigned (7 downto 0);
-  signal r8                  : unsigned (7 downto 0);
+  signal r14                 : unsigned (7 downto 0);
+  signal r15                 : unsigned (7 downto 0);
 
   signal GE1                 : std_logic;
-  signal sub1_src1            : unsigned (7 downto 0);
-  signal sub1_src2            : unsigned (7 downto 0);
-  --signal sub1                 : signed (8 downto 0);
+  signal sub1_src1           : unsigned (7 downto 0);
+  signal sub1_src2           : unsigned (7 downto 0);
   signal sum1_src1           : unsigned (8 downto 0);
   signal sum1_src2           : unsigned (8 downto 0);
   signal sum1                : unsigned (9 downto 0);
@@ -114,8 +114,6 @@ architecture main of kirsch is
   signal valid_parcel2            : std_logic;
   signal goto_init                : std_logic;
 
-  signal mode                     : mode_ty;
-
    -- A function to rotate left (rol) a vector by n bits
   function "rol" ( a : std_logic_vector; n : natural )
   return std_logic_vector
@@ -131,12 +129,12 @@ architecture main of kirsch is
     return std_logic_vector( unsigned(a) sll n );
   end function;
 begin
-  debug_num_5 <= X"E";
-  debug_num_4 <= X"C";
-  debug_num_3 <= X"E";
-  debug_num_2 <= X"3";
-  debug_num_1 <= X"2";
-  debug_num_0 <= X"7";
+  --debug_num_5 <= X"E";
+  --debug_num_4 <= X"C";
+  --debug_num_3 <= X"E";
+  --debug_num_2 <= X"3";
+  --debug_num_1 <= X"2";
+  --debug_num_0 <= X"7";
 
   debug_led_red <= (others => '0');
   debug_led_grn <= (others => '0');
@@ -216,31 +214,27 @@ begin
     end if;
   end process;
 
-  stage_1_v_bits : process
+  v_bits : process
   begin
     wait until rising_edge(i_clock);
     stage1_v <= stage1_v sll 1;
-    if (goto_init = '1') then
+    stage2_v <= stage2_v sll 1;
+    if (i_reset = '1') then
       stage1_v <= SS0;
     elsif (i_valid = '1') then
       stage1_v(0) <= '1';
     end if;
-  end process;
-
-  stage_2_v_bits : process
-  begin
-    wait until rising_edge(i_clock);
-    stage2_v <= stage2_v sll 1;
-    if (goto_init = '1') then
+    if (i_reset = '1') then
       stage2_v <= SS0;
     elsif (stage1_v(3) = '1') then
       stage2_v(0) <= '1';
     end if;
   end process;
 
-  -- if within the inner part, is valid to output
-  detect_edge_stage_1 : process begin
+  o_valid_carry_through : process begin
     wait until rising_edge(i_clock);
+    
+    -- if within the inner part, is valid to output
     if (i_valid = '1') then
       if (counter(7 downto 0) >= 2 and counter(15 downto 8) >= 2) then -- Once we reach row 3 column 3, start triggering o_valid
         valid_parcel1 <= '1';
@@ -248,25 +242,20 @@ begin
         valid_parcel1 <= '0';
       end if;
     end if;
-  end process;
-
-  -- at the last part of stage 1, pass to stage 2
-  carry_over_valid : process begin
-    wait until rising_edge(i_clock);
+    
+    -- at the last part of stage 1, pass to stage 2
     if (stage1_v(3) = '1') then
       valid_parcel2 <= valid_parcel1;
     end if;
-  end process;
-
-  -- at last part of stage 2, output validity
-  output_valid : process begin
-    wait until rising_edge(i_clock);
-    if (goto_init = '1' or stage2_v(2) = '0') then
+    
+    -- at last part of stage 2, output validity
+    if (stage2_v(2) = '0') then
       o_valid <= '0';
     else
       o_valid <= valid_parcel2;
     end if;
   end process;
+
   --o_valid <= '0' when goto_init = '1' or stage2_v(3) = '0' or valid_parcel2 = '0' else
   --           '1';
 
@@ -290,6 +279,8 @@ begin
     if (stage1_v(0) = '1') then
       r1 <= sum1(8 downto 0);
       r2 <= sum2(8 downto 0);
+    elsif (stage1_v(3) = '1') then
+      r2(7 downto 0) <= r7;
     end if;
   end process;
   
@@ -298,6 +289,8 @@ begin
     if (stage1_v(2) = '1') then
       r3 <= r5(8 downto 0);
       r4 <= r6(8 downto 0);
+    elsif (stage1_v(1) = '1') then
+      r4(7 downto 0) <= r7;
     end if;
   end process;
 
@@ -309,65 +302,70 @@ begin
     end if;
   end process;
 
+  R14_R15_proc: process begin
+    wait until rising_edge(i_clock);
+    if (i_valid = '1') then
+      r14 <= f; -- g (prev value)
+      r15 <= c; -- b (prev value)
+    elsif (stage1_v(0) = '1') then
+      r14 <= a;
+      r15 <= d;
+    elsif (stage1_v(1) = '1') then 
+      r14 <= c;
+      r15 <= f;
+    elsif (stage1_v(2) = '1') then
+      r14 <= e;
+      r15 <= h;
+    end if;
+  end process;
+
   R7_proc : process begin
     wait until rising_edge(i_clock);
-    if (stage1_v(0) = '1') then
+    if (stage1_v(0) = '1' or stage1_v(1) = '1' or stage1_v(2) = '1' or stage1_v(3) = '1') then
       if (GE1 = '0') then
-        r7 <= g;
+        r7 <= r14;
       else
-        r7 <= b;
-      end if;
-    elsif (stage1_v(2) = '1') then
-      if (GE1 = '0') then
-        r7 <= c;
-      else
-        r7 <= f;
+        r7 <= r15;
       end if;
     end if;
   end process;
-
-  R8_proc : process begin
-    wait until rising_edge(i_clock);
-    if (stage1_v(1) = '1') then
-      if (GE1 = '0') then
-        r8 <= a;
-      else
-        r8 <= d;
-      end if;
-    elsif (stage1_v(3) = '1') then
-      if (GE1 = '0') then
-        r8 <= e;
-      else
-        r8 <= h;
-      end if;
-    end if;
-  end process;
-
--- Todo: replace dis shit with tri-state
+ 
   sum1_src1 <= '0' & h when stage1_v(0) = '1' else
                '0' & d when stage1_v(1) = '1' else
-                    r1;  
-  sum1_src2 <= '0' & a when stage1_v(0) = '1' else
-               '0' & e when stage1_v(1) = '1' else
-              '0' & r7 when stage1_v(2) = '1' else
-                    r2;
-  sum2_src1 <= '0' & b when stage1_v(0) = '1' else
-               '0' & f when stage1_v(1) = '1' else
-                    r2 when stage1_v(2) = '1' else
-                    r3;
-  sum2_src2 <= '0' & c when stage1_v(0) = '1' else
-               '0' & g when stage1_v(1) = '1' else
-              '0' & r8 when stage1_v(2) = '1' else
-                    r4;
+               r1;
+  --sum1_src2 <= '0' & a when stage1_v(0) = '1' else
+  --             '0' & e when stage1_v(1) = '1' else
+  --             '0' & r4(7 downto 0) when stage1_v(2) = '1' else
+  --                   r2;
+  --sum2_src1 <= '0' & b when stage1_v(0) = '1' else
+  --             '0' & f when stage1_v(1) = '1' else
+  --                  r2 when stage1_v(2) = '1' else
+  --                  r3;
+  --sum2_src2 <= '0' & c when stage1_v(0) = '1' else
+  --             '0' & g when stage1_v(1) = '1' else
+  --             '0' & r7 when stage1_v(2) = '1' else
+  --                   r4;
 
-  sub1_src1 <=  g when stage1_v(0) = '1' else
-                a when stage1_v(1) = '1' else
-                c when stage1_v(2) = '1' else
-                e when stage1_v(3) = '1';
-  sub1_src2 <=  b when stage1_v(0) = '1' else
-                d when stage1_v(1) = '1' else
-                f when stage1_v(2) = '1' else
-                h when stage1_v(3) = '1';
+  
+  --sum1_src1 <= ('0' & (h and (7 downto 0 => stage1_v(0))))
+  --          or ('0' & (d and (7 downto 0 => stage1_v(1))))
+  --          or (r1 and (8 downto 0 => (stage1_v(2) or stage1_v(3))));
+  sum1_src2 <= ('0' & (a and (7 downto 0 => stage1_v(0))))
+            or ('0' & (e and (7 downto 0 => stage1_v(1))))
+            or ('0' & (r4(7 downto 0) and (7 downto 0 => stage1_v(2))))
+            or (r2 and (8 downto 0 => stage1_v(3)));
+  
+  sum2_src1 <= ('0' & (b and (7 downto 0 => stage1_v(0))))
+            or ('0' & (f and (7 downto 0 => stage1_v(1))))
+                  or (r2 and (8 downto 0 => stage1_v(2)))
+                  or (r3 and (8 downto 0 => stage1_v(3)));
+  sum2_src2 <= ('0' & (c and (7 downto 0 => stage1_v(0))))
+            or ('0' & (g and (7 downto 0 => stage1_v(1))))
+           or ('0' & (r7 and (7 downto 0 => stage1_v(2))))
+                  or (r4 and (8 downto 0 => stage1_v(3)));
+
+  sub1_src1 <= r14;
+  sub1_src2 <= r15;
 
   GE1 <= '0' when sub1_src1 >= sub1_src2 else '1';
   sum1 <= ('0' & sum1_src1) + ('0' & sum1_src2);
@@ -425,24 +423,35 @@ begin
     end if;
   end process;
 
+ -- sum3_src1 <= ("000" & (r4 and (8 downto 0 => stage2_v(0))))
+ --           or ("00" & (r5 and (9 downto 0 => stage2_v(1))))
+ --           or (r11(11 downto 0) and (11 downto 0 => (stage2_v(2) or stage2_v(3))));
+ -- sum3_src2 <= ("0000" & (r7 and (7 downto 0 => stage2_v(0))))
+ --           or ("00" & (r6 and (9 downto 0 => stage2_v(1))))
+ --           or ((r11(11 downto 0) sll 1) and (11 downto 0 => (stage2_v(2) or stage2_v(3))));
   sum3_src1 <= "000" & r4 when stage2_v(0) = '1' else
-                "00" & r5 when stage2_v(1) = '1' else
+               "00" & r5 when stage2_v(1) = '1' else
                r11(11 downto 0);
-  sum3_src2 <= "0000" & r8 when stage2_v(0) = '1' else
+  sum3_src2 <= "0000" & r7 when stage2_v(0) = '1' else
                "00" & r6 when stage2_v(1) = '1' else
                r11(11 downto 0) sll 1;
   sum4_src1 <= r3;
-  sum4_src2 <= '0' & r7;
+  sum4_src2 <= '0' & r2(7 downto 0);
 
-  sub2_src1 <= "000" & r13 when stage2_v(0) = '1' 
-                             or stage2_v(2) = '1' else
-               "000" & r12 when stage2_v(1) = '1' else
-       ("000" & r13) sll 3 when stage2_v(3) = '1'
-       ;
-  sub2_src2 <= "000" & r12 when stage2_v(0) = '1' 
-                             or stage2_v(2) = '1' else
-                       r11 when stage2_v(1) = '1' 
-                             or stage2_v(3) = '1';
+ -- sub2_src1 <= ("000" & (r13 and (9 downto 0 => stage1_v(0))))
+ --           or ("000" & (r12 and (9 downto 0 => stage1_v(1))))
+ --           or ("000" & (r13 and (9 downto 0 => stage1_v(2))))
+ --           or ((("000" & r13) sll 3) and (12 downto 0 => stage1_v(3)));
+ -- sub2_src2 <= (b and (7 downto 0 => stage1_v(0)))
+ --           or (d and (7 downto 0 => stage1_v(1)))
+ --           or (f and (7 downto 0 => stage1_v(2)))
+ --           or (h and (7 downto 0 => stage1_v(3)));
+
+  sub2_src1 <= "000" & r12 when stage2_v(1) = '1' else
+       ("000" & r13) sll 3 when stage2_v(3) = '1' else
+               "000" & r13;
+  sub2_src2 <= r11 when stage2_v(1) = '1' or stage2_v(3) = '1' else 
+               "000" & r12;
 
   -- todo: maybe use a GE instead of sub. Will need to test.
   sub2 <= signed('0' & sub2_src1) - signed('0' & sub2_src2);
@@ -454,16 +463,10 @@ begin
   o_edge <= '1' when sub2 >= 384 else '0';
   o_dir <= std_logic_vector(dir6);
 
---  set_mode : process
---  begin
---    wait until rising_edge(i_clock);
---    if (goto_init = '1') then
---      mode <= reset;
---    end if;
---    --TOOD: when set mode to busy? idle?
---  end process;
-
-  --o_mode <= mode;
+   
+  --o_mode <= "01" when i_reset = '1' else
+  --          "10" when counter = 0 else -- do better condition
+  --          "11" when counter > 0; -- do better condition
 
   o_row_proc : process begin
     wait until rising_edge(i_clock);
@@ -475,12 +478,12 @@ begin
   end process;
 
   -- For debugging
-  o_mode(1) <= '1' when valid_parcel1 = '1' else '0';
-  o_mode(0) <= '1' when counter(8) = '1' else '0';
-  --debug_num_0 <= std_logic_vector(sub2(3 downto 0));
-  --debug_num_1 <= std_logic_vector(sub2(7 downto 4));
-  --debug_num_2 <= std_logic_vector(sub2(11 downto 8));
-  --debug_num_3 <= std_logic_vector("00" & sub2(13 downto 12));
+  --o_mode(1) <= '1' when valid_parcel1 = '1' else '0';
+  --o_mode(0) <= '1' when counter(8) = '1' else '0';
+  debug_num_0 <= std_logic_vector(sub2(3 downto 0));
+  debug_num_1 <= std_logic_vector(sub2(7 downto 4));
+  debug_num_2 <= std_logic_vector(sub2(11 downto 8));
+  debug_num_3 <= std_logic_vector("00" & sub2(13 downto 12));
   --debug_num_4 <= std_logic_vector("0000");
   --debug_num_5 <= std_logic_vector(unsigned("00" & std_logic_vector(r6(9 downto 8))));
 end architecture;
