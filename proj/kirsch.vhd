@@ -95,11 +95,14 @@ architecture main of kirsch is
   signal r17                  : unsigned (12 downto 0);
   signal r12                  : unsigned (9 downto 0);
   signal r13                  : unsigned (9 downto 0);
-  signal r16                  : unsigned (9 downto 0);
+  signal r16                  : unsigned (12 downto 0);
 
   signal sum3_src1           : unsigned (11 downto 0);
   signal sum3_src2           : unsigned (11 downto 0);
   signal sum3                : unsigned (12 downto 0);
+  signal sum6_src1           : unsigned (12 downto 0);
+  signal sum6_src2           : unsigned (12 downto 0);
+  signal sum6                : unsigned (12 downto 0);
   signal sum4_src1           : unsigned (8 downto 0);
   signal sum4_src2           : unsigned (8 downto 0);
   signal sum4                : unsigned (9 downto 0);
@@ -408,15 +411,15 @@ begin
   
   r11_proc : process begin
     wait until rising_edge(i_clock);
-    if (stage2_v(2) = '1') then
-      r17 <= r11;
-    elsif (stage2_v(3) = '1') then
-      if (sub2(13) = '0') then
-        r17 <= unsigned(sub2(12 downto 0));
-      else
-        r17 <= to_unsigned(0,13);
-      end if;
-    end if;
+    --if (stage2_v(2) = '1') then
+      r17 <= sum6;
+    --elsif (stage2_v(3) = '1') then
+    --  if (sub2(13) = '0') then
+    --    r17 <= unsigned(sub2(12 downto 0));
+    --  else
+    --    r17 <= to_unsigned(0,13);
+    --  end if;
+    --end if;
     r11 <= sum3;
   end process;
 
@@ -438,7 +441,7 @@ begin
     elsif (stage2_v(0) = '1') then 
       r13 <= sum4;
     elsif (stage2_v(1) = '1') then
-      r13 <= r16;
+      r13 <= r16(9 downto 0);
     elsif (stage2_v(2) = '1' and sub3(10) = '1') then
       r13 <= r12;
     end if;
@@ -446,11 +449,17 @@ begin
 
   r16_proc : process begin
     wait until rising_edge(i_clock);
-    if (stage2_v(0) = '1' or stage2_v(2) = '1') then
+    if (stage2_v(0) = '1') then
       if (sub3(10) = '0') then
-        r16 <= r13;
+        r16 <= "000" & r13;
       else
-        r16 <= r12;
+        r16 <= "000" & r12;
+      end if;
+    elsif (stage2_v(2) = '1') then
+      if (sub3(10) = '0') then
+        r16 <= ("000" & r13) sll 3;
+      else
+        r16 <= ("000" & r12) sll 3;
       end if;
     end if;
   end process;
@@ -469,6 +478,9 @@ begin
   sum4_src2 <= '0' & r2(7 downto 0);
   sum5_src1 <= r4;
   sum5_src2 <= '0' & r7;
+
+  sum6_src1 <= r11;
+  sum6_src2 <= to_unsigned(384, 13);
 
  -- sub2_src1 <= ("000" & (r13 and (9 downto 0 => stage1_v(0))))
  --           or ("000" & (r12 and (9 downto 0 => stage1_v(1))))
@@ -493,7 +505,7 @@ begin
   --  end if;
   --end process;
   
-  sub2_src1 <= ("000" & r16) sll 3;
+  sub2_src1 <= r16;
   sub2_src2 <= r17;
   sub3_src1 <= r13;
   sub3_src2 <= r12;
@@ -501,12 +513,13 @@ begin
   -- todo: maybe use a GE instead of sub. Will need to test.
   sub2 <= signed('0' & sub2_src1) - signed('0' & sub2_src2);
   sub3 <= signed('0' & sub3_src1) - signed('0' & sub3_src2);
+  
   sum3 <= ('0' & sum3_src1) + ('0' & sum3_src2);
   sum4 <= ('0' & sum4_src1) + ('0' & sum4_src2);
   sum5 <= ('0' & sum5_src1) + ('0' & sum5_src2);
-  temp <= signed(r17(12 downto 7)) - to_signed(3, 6);
+  sum6 <= (sum6_src1 + sum6_src2);
 --------------------- END ------------------------
-  o_edge <= '1' when sub2 >= 0 else '0';
+  o_edge <= not (sub2(13));
   o_dir <= std_logic_vector(dir6);
 
    
