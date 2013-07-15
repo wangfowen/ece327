@@ -131,12 +131,12 @@ architecture main of kirsch is
     return std_logic_vector( unsigned(a) sll n );
   end function;
 begin
-  --debug_num_5 <= X"E";
-  --debug_num_4 <= X"C";
-  --debug_num_3 <= X"E";
-  --debug_num_2 <= X"3";
-  --debug_num_1 <= X"2";
-  --debug_num_0 <= X"7";
+  debug_num_5 <= X"E";
+  debug_num_4 <= X"C";
+  debug_num_3 <= X"E";
+  debug_num_2 <= X"3";
+  debug_num_1 <= X"2";
+  debug_num_0 <= X"7";
 
   debug_led_red <= (others => '0');
   debug_led_grn <= (others => '0');
@@ -425,13 +425,13 @@ begin
     end if;
   end process;
 
-  sum3_src1 <= "000" & r3 when stage2_v(0) = '1' else
+  sum3_src1 <= "000" & r4 when stage2_v(0) = '1' else
                 "00" & r5 when stage2_v(1) = '1' else
                r11(11 downto 0);
   sum3_src2 <= "0000" & r8 when stage2_v(0) = '1' else
                "00" & r6 when stage2_v(1) = '1' else
                r11(11 downto 0) sll 1;
-  sum4_src1 <= r4;
+  sum4_src1 <= r3;
   sum4_src2 <= '0' & r7;
 
   sub2_src1 <= "000" & r13 when stage2_v(0) = '1' 
@@ -464,11 +464,6 @@ begin
 --  end process;
 
   --o_mode <= mode;
-  debug_num_0 <= std_logic_vector(r11(3 downto 0));
-  debug_num_1 <= std_logic_vector(r11(7 downto 4));
-  debug_num_2 <= std_logic_vector(r11(11 downto 8));
-  debug_num_3 <= "000" & r11(12);
-  debug_num_5 <= std_logic_vector(dir);
 
   o_row_proc : process begin
     wait until rising_edge(i_clock);
@@ -482,4 +477,10 @@ begin
   -- For debugging
   o_mode(1) <= '1' when valid_parcel1 = '1' else '0';
   o_mode(0) <= '1' when counter(8) = '1' else '0';
+  --debug_num_0 <= std_logic_vector(sub2(3 downto 0));
+  --debug_num_1 <= std_logic_vector(sub2(7 downto 4));
+  --debug_num_2 <= std_logic_vector(sub2(11 downto 8));
+  --debug_num_3 <= std_logic_vector("00" & sub2(13 downto 12));
+  --debug_num_4 <= std_logic_vector("0000");
+  --debug_num_5 <= std_logic_vector(unsigned("00" & std_logic_vector(r6(9 downto 8))));
 end architecture;
