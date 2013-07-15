@@ -66,7 +66,7 @@ architecture main of kirsch is
   signal a, b, c,
          h,    d,
          g, f, e                 : unsigned(7 downto 0);
-
+  signal temp : signed(5 downto 0);
 --------------------- STAGE1 ------------------------
   signal r1                  : unsigned (8 downto 0);
   signal r2                  : unsigned (8 downto 0);
@@ -92,8 +92,10 @@ architecture main of kirsch is
 
 --------------------- STAGE2 ------------------------
   signal r11                  : unsigned (12 downto 0);
+  signal r17                  : unsigned (12 downto 0);
   signal r12                  : unsigned (9 downto 0);
   signal r13                  : unsigned (9 downto 0);
+  signal r16                  : unsigned (9 downto 0);
 
   signal sum3_src1           : unsigned (11 downto 0);
   signal sum3_src2           : unsigned (11 downto 0);
@@ -101,9 +103,15 @@ architecture main of kirsch is
   signal sum4_src1           : unsigned (8 downto 0);
   signal sum4_src2           : unsigned (8 downto 0);
   signal sum4                : unsigned (9 downto 0);
+  signal sum5_src1           : unsigned (8 downto 0);
+  signal sum5_src2           : unsigned (8 downto 0);
+  signal sum5                : unsigned (9 downto 0);
   signal sub2_src1            : unsigned (12 downto 0);
   signal sub2_src2            : unsigned (12 downto 0);
   signal sub2                 : signed (13 downto 0);
+  signal sub3_src1            : unsigned (9 downto 0);
+  signal sub3_src2            : unsigned (9 downto 0);
+  signal sub3                 : signed(10 downto 0);
  
   signal dir5                : unsigned (2 downto 0);
   signal dir6                : unsigned (2 downto 0);
@@ -376,7 +384,7 @@ begin
   dirs_proc: process begin
     wait until rising_edge(i_clock);
     if (stage2_v(0) = '1') then
-      if (sub2(13) = '0') then
+      if (sub3(10) = '0') then
         dir5 <= dir(1) & '0' & not(dir(1));
       else
         dir5 <= dir(2) & "10";
@@ -384,7 +392,7 @@ begin
     end if;
     
     if (stage2_v(1) = '1') then
-      if (sub2(13) = '0') then
+      if (sub3(10) = '0') then
         dir6 <= dir(3) & '0' & dir(3);
       else
         dir6 <= dir(4) & "11";
@@ -392,7 +400,7 @@ begin
     end if;
 
     if (stage2_v(2) = '1') then
-      if (sub2(13) = '0') then
+      if (sub3(10) = '0') then
         dir6 <= dir5;
       end if;
     end if;
@@ -400,6 +408,15 @@ begin
   
   r11_proc : process begin
     wait until rising_edge(i_clock);
+    if (stage2_v(2) = '1') then
+      r17 <= r11;
+    elsif (stage2_v(3) = '1') then
+      if (sub2(13) = '0') then
+        r17 <= unsigned(sub2(12 downto 0));
+      else
+        r17 <= to_unsigned(0,13);
+      end if;
+    end if;
     r11 <= sum3;
   end process;
 
@@ -408,9 +425,9 @@ begin
     if (stage1_v(3) = '1') then
       r12 <= r6;
     elsif (stage2_v(0) = '1') then
-      r12 <= sum4;
-    elsif (stage2_v(1) = '1' and sub2(13) = '1') then
-      r12 <= r11(9 downto 0);
+      r12 <= sum5;
+    elsif (stage2_v(1) = '1' and sub3(10) = '0') then
+      r12 <= r13;
     end if;
   end process;
 
@@ -418,8 +435,23 @@ begin
     wait until rising_edge(i_clock);
     if (stage1_v(3) = '1') then
       r13 <= r5;
-    elsif ((stage2_v(0) = '1' or stage2_v(2) = '1') and sub2(13) = '1') then
+    elsif (stage2_v(0) = '1') then 
+      r13 <= sum4;
+    elsif (stage2_v(1) = '1') then
+      r13 <= r16;
+    elsif (stage2_v(2) = '1' and sub3(10) = '1') then
       r13 <= r12;
+    end if;
+  end process;
+
+  r16_proc : process begin
+    wait until rising_edge(i_clock);
+    if (stage2_v(0) = '1' or stage2_v(2) = '1') then
+      if (sub3(10) = '0') then
+        r16 <= r13;
+      else
+        r16 <= r12;
+      end if;
     end if;
   end process;
 
@@ -429,14 +461,14 @@ begin
  -- sum3_src2 <= ("0000" & (r7 and (7 downto 0 => stage2_v(0))))
  --           or ("00" & (r6 and (9 downto 0 => stage2_v(1))))
  --           or ((r11(11 downto 0) sll 1) and (11 downto 0 => (stage2_v(2) or stage2_v(3))));
-  sum3_src1 <= "000" & r4 when stage2_v(0) = '1' else
-               "00" & r5 when stage2_v(1) = '1' else
+  sum3_src1 <= "00" & r5 when stage2_v(0) = '1' else
                r11(11 downto 0);
-  sum3_src2 <= "0000" & r7 when stage2_v(0) = '1' else
-               "00" & r6 when stage2_v(1) = '1' else
-               r11(11 downto 0) sll 1;
+  sum3_src2 <= "00" & r6 when stage2_v(0) = '1' else
+               (r11(11 downto 0) sll 1);
   sum4_src1 <= r3;
   sum4_src2 <= '0' & r2(7 downto 0);
+  sum5_src1 <= r4;
+  sum5_src2 <= '0' & r7;
 
  -- sub2_src1 <= ("000" & (r13 and (9 downto 0 => stage1_v(0))))
  --           or ("000" & (r12 and (9 downto 0 => stage1_v(1))))
@@ -447,20 +479,34 @@ begin
  --           or (f and (7 downto 0 => stage1_v(2)))
  --           or (h and (7 downto 0 => stage1_v(3)));
 
-  sub2_src1 <= "000" & r12 when stage2_v(1) = '1' else
-       ("000" & r13) sll 3 when stage2_v(3) = '1' else
-               "000" & r13;
-  sub2_src2 <= r11 when stage2_v(1) = '1' or stage2_v(3) = '1' else 
-               "000" & r12;
+  --testt_proc : process begin
+  --  wait until rising_edge(i_clock);
+  --  if (stage1_v(3) = '1' or stage2_v(1) = '1') then
+  --    sub2_src1 <= "000" & r13;
+  --    sub2_src2 <= "000" & r12;
+  --  elsif (stage2_v(0) = '1') then
+  --    sub2_src1 <= "000" & r12;
+  --    sub2_src2 <= r11;
+  --  elsif (stage2_v(2) = '1') then
+  --    sub2_src1 <= ("000" & r13) sll 3;
+  --    sub2_src2 <= r11;
+  --  end if;
+  --end process;
+  
+  sub2_src1 <= ("000" & r16) sll 3;
+  sub2_src2 <= r17;
+  sub3_src1 <= r13;
+  sub3_src2 <= r12;
 
   -- todo: maybe use a GE instead of sub. Will need to test.
   sub2 <= signed('0' & sub2_src1) - signed('0' & sub2_src2);
+  sub3 <= signed('0' & sub3_src1) - signed('0' & sub3_src2);
   sum3 <= ('0' & sum3_src1) + ('0' & sum3_src2);
   sum4 <= ('0' & sum4_src1) + ('0' & sum4_src2);
-
+  sum5 <= ('0' & sum5_src1) + ('0' & sum5_src2);
+  temp <= signed(r17(12 downto 7)) - to_signed(3, 6);
 --------------------- END ------------------------
-  
-  o_edge <= '1' when sub2 >= 384 else '0';
+  o_edge <= '1' when sub2 >= 0 else '0';
   o_dir <= std_logic_vector(dir6);
 
    
@@ -480,10 +526,10 @@ begin
   -- For debugging
   --o_mode(1) <= '1' when valid_parcel1 = '1' else '0';
   --o_mode(0) <= '1' when counter(8) = '1' else '0';
-  debug_num_0 <= std_logic_vector(sub2(3 downto 0));
-  debug_num_1 <= std_logic_vector(sub2(7 downto 4));
-  debug_num_2 <= std_logic_vector(sub2(11 downto 8));
-  debug_num_3 <= std_logic_vector("00" & sub2(13 downto 12));
+  --debug_num_0 <= std_logic_vector(sub2(3 downto 0));
+  --debug_num_1 <= std_logic_vector(sub2(7 downto 4));
+  --debug_num_2 <= std_logic_vector(sub2(11 downto 8));
+  --debug_num_3 <= std_logic_vector("00" & sub2(13 downto 12));
   --debug_num_4 <= std_logic_vector("0000");
   --debug_num_5 <= std_logic_vector(unsigned("00" & std_logic_vector(r6(9 downto 8))));
 end architecture;
