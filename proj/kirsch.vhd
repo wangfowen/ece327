@@ -123,6 +123,7 @@ architecture main of kirsch is
   signal last_pixel_stage2        : std_logic;
   signal last_pixel_end           : std_logic;
   signal edge_tmp                 : std_logic;
+  signal idle                     : std_logic;
 
    -- A function to rotate left (rol) a vector by n bits
   function "rol" ( a : std_logic_vector; n : natural )
@@ -468,9 +469,18 @@ begin
     end if;
   end process;
 
+  o_mode_proc : process begin
+    wait until rising_edge(i_clock);
+    if (i_valid = '1') then
+      idle <= '0';
+    elsif (edge_tmp = '1' and last_pixel_end = '1') then
+      idle <= '1';
+    end if;
+  end process;
+
   -- For debugging
   o_edge <= edge_tmp;
-  o_mode(0) <= i_reset or edge_tmp or last_pixel_end;
+  o_mode(0) <= i_reset or idle;
   o_mode(1) <= not(i_reset);
   --o_mode(0) <= '1' when counter(8) = '1' else '0';
   --debug_num_0 <= std_logic_vector(sub2(3 downto 0));
