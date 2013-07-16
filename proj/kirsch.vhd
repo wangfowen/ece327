@@ -66,7 +66,7 @@ architecture main of kirsch is
   signal a, b, c,
          h,    d,
          g, f, e                 : unsigned(7 downto 0);
-  signal temp : signed(5 downto 0);
+
 --------------------- STAGE1 ------------------------
   signal r1                  : unsigned (8 downto 0);
   signal r2                  : unsigned (8 downto 0);
@@ -94,8 +94,6 @@ architecture main of kirsch is
   signal r11                  : unsigned (12 downto 0);
   signal r12                  : unsigned (9 downto 0);
   signal r13                  : unsigned (9 downto 0);
-  signal r16                  : unsigned (9 downto 0);
-  signal r17                  : unsigned (9 downto 0);
 
   signal sum3_src1           : unsigned (12 downto 0);
   signal sum3_src2           : unsigned (11 downto 0);
@@ -115,6 +113,7 @@ architecture main of kirsch is
  
   signal dir5                : unsigned (2 downto 0);
   signal dir6                : unsigned (2 downto 0);
+  signal dir7                : unsigned (2 downto 0);
 
 --------------------- ENDVAR ------------------------
 
@@ -382,7 +381,9 @@ begin
 
     if (stage2_v(2) = '1') then
       if (sub3(10) = '0') then
-        dir6 <= dir5;
+        dir7 <= dir5;
+      else
+        dir7 <= dir6;
       end if;
     end if;
   end process;
@@ -409,7 +410,7 @@ begin
       r13 <= r6;
     elsif (stage2_v(0) = '1') then
       r13 <= sum5;
-    elsif ((stage2_v(1) = '1' or stage2_v(2) = '1') and sub3(10) = '0') then 
+    elsif (sub3(10) = '0') then 
       r13 <= r12;
     end if;
   end process;
@@ -441,9 +442,14 @@ begin
   o_edge_proc: process begin
     wait until rising_edge(i_clock);
     o_edge <= not (sub2(13));
+    if (sub2(13) = '1') then
+      o_dir <= "000";
+    else 
+      o_dir <= std_logic_vector(dir7);
+    end if;
   end process;
   
-  o_dir <= std_logic_vector(dir6);
+  --o_dir <= "000" when std_logic_vector(dir6);
 
    
   --o_mode <= "01" when i_reset = '1' else
