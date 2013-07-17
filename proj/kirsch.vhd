@@ -117,13 +117,11 @@ architecture main of kirsch is
 
 --------------------- ENDVAR ------------------------
 
-  signal valid_parcel1            : std_logic;
-  signal valid_parcel2            : std_logic;
-  signal goto_init                : std_logic;
   signal last_pixel_stage2        : std_logic;
   signal last_pixel_end           : std_logic;
-  signal edge_tmp                 : std_logic;
-  signal idle                     : std_logic;
+  
+  signal o_valid_tmp             : std_logic;
+  signal o_mode_tmp             : std_logic_vector(1 downto 0);
 
    -- A function to rotate left (rol) a vector by n bits
   function "rol" ( a : std_logic_vector; n : natural )
@@ -150,12 +148,6 @@ begin
   debug_led_red <= (others => '0');
   debug_led_grn <= (others => '0');
 
-  --restart when reset is pressed or reaches end of image
-  -- TODO: counter bit is insuficient, we need to reset only when we sent the very last parcel
-  -- ie. we need to wait 8 clock cycles after the last parcel (counter(16) = '1')
-  goto_init <= '1' when i_reset = '1' else --or (counter(16) = '1') else
-               '0';
-
   MEM_CPY : for I in 0 to 2 generate
     i_valid_and_mem_row_index(I) <= i_valid and mem_row_index(I);
     mem : entity work.mem(main)
@@ -180,16 +172,18 @@ begin
 
   increment_counters : process begin
     wait until rising_edge(i_clock);
-    if (goto_init = '1') then
+    if (i_reset = '1') then
       counter <= to_unsigned(0, 17);
     elsif (i_valid = '1') then
       counter <= counter + 1;
+    elsif (o_mode_tmp(0) = '0') then
+      counter(16) <= '0';
     end if;
   end process;
 
   rotate_mem_row_index : process begin
     wait until rising_edge(i_clock);
-    if (goto_init = '1') then
+    if (o_mode_tmp(0) = '0') then
       mem_row_index <= S0;
     elsif (i_valid = '1' and counter(7 downto 0) = 255) then -- reached end of column
       mem_row_index <= mem_row_index rol 1;
@@ -201,9 +195,7 @@ begin
     latest_mem_rep_j : for J in 0 to 1 generate
       latest_mem: process begin
         wait until rising_edge(i_clock);
-        if (goto_init = '1') then
-          conv_vars(I)(J) <= to_unsigned(0, 8);
-        elsif (i_valid = '1') then
+        if (i_valid = '1') then
           conv_vars(I)(J) <= conv_vars(I)(J + 1);
         end if;
       end process;
@@ -213,11 +205,7 @@ begin
   --update the conv table with the new values
   latest_col: process begin
     wait until rising_edge(i_clock);
-    if (goto_init = '1') then
-      conv_vars(0)(2) <= to_unsigned(0, 8);
-      conv_vars(1)(2) <= to_unsigned(0, 8);
-      conv_vars(2)(2) <= to_unsigned(0, 8);
-    elsif (i_valid = '1') then
+    if (i_valid = '1') then
       conv_vars(0)(2) <= rd_c;
       conv_vars(1)(2) <= rd_d;
       conv_vars(2)(2) <= unsigned(i_pixel);
@@ -231,7 +219,7 @@ begin
     stage2_v <= stage2_v sll 1;
     if (i_reset = '1') then
       stage1_v <= SS0;
-    elsif (i_valid = '1') then
+    elsif (i_valid = '1' and counter(7 downto 0) >= 2 and counter(15 downto 8) >= 2) then
       stage1_v(0) <= '1';
     end if;
     if (i_reset = '1') then
@@ -243,30 +231,16 @@ begin
 
   o_valid_carry_through : process begin
     wait until rising_edge(i_clock);
+    o_valid_tmp <= stage2_v(3); -- at last part of stage 2, output validity
 
-    -- if within the inner part, is valid to output
-    if (i_valid = '1') then
-      if (counter(7 downto 0) >= 2 and counter(15 downto 8) >= 2) then -- Once we reach row 3 column 3, start triggering o_valid
-        valid_parcel1 <= '1';
-      else
-        valid_parcel1 <= '0';
-      end if;
-    end if;
-
-    -- at the last part of stage 1, pass to stage 2
     if (stage1_v(3) = '1') then
-      valid_parcel2 <= valid_parcel1;
       last_pixel_stage2 <= not(counter(16));
     end if;
-
-    -- at last part of stage 2, output validity
-    if (stage2_v(3) = '0') then
-      o_valid <= '0';
-    else
-      o_valid <= valid_parcel2;
+    if (stage2_v(3) = '1') then
       last_pixel_end <= last_pixel_stage2;
     end if;
   end process;
+  o_valid <= o_valid_tmp;
 
   a <= conv_vars(0)(0); b <= conv_vars(0)(1); c <= conv_vars(0)(2);
   h <= conv_vars(1)(0);                       d <= conv_vars(1)(2);
@@ -357,13 +331,12 @@ begin
             or ('0' & (g and (7 downto 0 => stage1_v(1))))
            or ('0' & (r7 and (7 downto 0 => stage1_v(2))))
                   or (r4(8 downto 0) and (8 downto 0 => stage1_v(3)));
+  sum1 <= ('0' & sum1_src1) + ('0' & sum1_src2);
+  sum2 <= ('0' & sum2_src1) + ('0' & sum2_src2);
 
   sub1_src1 <= r14;
   sub1_src2 <= r15;
-
   GE1 <= '0' when sub1_src1 >= sub1_src2 else '1';
-  sum1 <= ('0' & sum1_src1) + ('0' & sum1_src2);
-  sum2 <= ('0' & sum2_src1) + ('0' & sum2_src2);
 
 --------------------- STAGE2 ------------------------
 
@@ -430,39 +403,32 @@ begin
   sum4_src2 <= '0' & r2(7 downto 0);
   sum5_src1 <= r4(8 downto 0);
   sum5_src2 <= '0' & r7;
-
-  sub2_src1 <= ("000" & r13) sll 3;
-  sub2_src2 <= r11;
-
-  sub3_src1 <= r12;
-  sub3_src2 <= r13;
-
-  sub2 <= signed('0' & sub2_src1) - signed('0' & sub2_src2);
-  sub3 <= signed('0' & sub3_src1) - signed('0' & sub3_src2);
-
   sum3 <= (      sum3_src1) + ('0' & sum3_src2);
   sum4 <= ('0' & sum4_src1) + ('0' & sum4_src2);
   sum5 <= ('0' & sum5_src1) + ('0' & sum5_src2);
+
+  sub2_src1 <= ("000" & r13) sll 3;
+  sub2_src2 <= r11;
+  sub3_src1 <= r12;
+  sub3_src2 <= r13;
+  sub2 <= signed('0' & sub2_src1) - signed('0' & sub2_src2);
+  sub3 <= signed('0' & sub3_src1) - signed('0' & sub3_src2);
+
 --------------------- END ------------------------
 
   o_edge_proc: process begin
     wait until rising_edge(i_clock);
-    edge_tmp <= not(sub2(13));
+    o_edge <= not(sub2(13));
     if (sub2(13) = '1') then
       o_dir <= "000";
     else
       o_dir <= std_logic_vector(dir7);
     end if;
-    -- if MSB of count is 1 and no other pixels being processed, then turn start off
-    -- but how know when no other pixels are being processed
-    -- keep a stack counter?
   end process;
-
-  --o_dir <= "000" when std_logic_vector(dir6);
 
   o_row_proc : process begin
     wait until rising_edge(i_clock);
-    if (goto_init = '1') then
+    if (o_mode_tmp(0) = '0') then
       o_row <= X"00";
     elsif (i_valid = '1') then
       o_row <= std_logic_vector(counter(15 downto 8));
@@ -471,24 +437,23 @@ begin
 
   o_mode_proc : process begin
     wait until rising_edge(i_clock);
-    if (i_reset = '1') then
-      idle <= '1';
-    elsif (i_valid = '1') then
-      idle <= '0';
-    elsif (edge_tmp = '1') then
-      idle <= last_pixel_end;
+    o_mode_tmp(1) <= not(i_reset);
+    if (i_reset = '1' or i_valid = '1') then
+      o_mode_tmp(0) <= '1';
+    elsif (o_mode_tmp(1) = '0') then
+      o_mode_tmp(0) <= '0';
+    elsif (o_valid_tmp = '1') then
+      o_mode_tmp(0) <= last_pixel_end;
     end if;
   end process;
+  o_mode(0) <= o_mode_tmp(0);
+  o_mode(1) <= o_mode_tmp(1);
 
   -- For debugging
-  o_edge <= edge_tmp;
-  o_mode(0) <= idle;
-  o_mode(1) <= not(i_reset);
-  --o_mode(0) <= '1' when counter(8) = '1' else '0';
-  --debug_num_0 <= std_logic_vector(sub2(3 downto 0));
-  --debug_num_1 <= std_logic_vector(sub2(7 downto 4));
-  --debug_num_2 <= std_logic_vector(sub2(11 downto 8));
-  --debug_num_3 <= std_logic_vector("00" & sub2(13 downto 12));
-  --debug_num_4 <= std_logic_vector("0000");
-  --debug_num_5 <= std_logic_vector(unsigned("00" & std_logic_vector(r6(9 downto 8))));
+  debug_num_0 <= std_logic_vector(sub2(3 downto 0));
+  debug_num_1 <= std_logic_vector(sub2(7 downto 4));
+  debug_num_2 <= std_logic_vector(sub2(11 downto 8));
+  debug_num_3 <= std_logic_vector("00" & sub2(13 downto 12));
+  debug_num_4 <= std_logic_vector('0' & dir7);
+  --debug_num_5 <= counter(16) & counter(0) & '0' & '0';
 end architecture;
