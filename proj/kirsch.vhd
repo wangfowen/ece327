@@ -138,12 +138,12 @@ architecture main of kirsch is
     return std_logic_vector( unsigned(a) sll n );
   end function;
 begin
-  --debug_num_5 <= X"E";
-  --debug_num_4 <= X"C";
-  --debug_num_3 <= X"E";
-  --debug_num_2 <= X"3";
-  --debug_num_1 <= X"2";
-  --debug_num_0 <= X"7";
+  debug_num_5 <= X"E";
+  debug_num_4 <= X"C";
+  debug_num_3 <= X"E";
+  debug_num_2 <= X"3";
+  debug_num_1 <= X"2";
+  debug_num_0 <= X"7";
 
   debug_led_red <= (others => '0');
   debug_led_grn <= (others => '0');
@@ -172,12 +172,12 @@ begin
 
   increment_counters : process begin
     wait until rising_edge(i_clock);
-    if (i_reset = '1') then
+    if (i_reset = '1') then 
       counter <= to_unsigned(0, 17);
     elsif (i_valid = '1') then
       counter <= counter + 1;
     elsif (o_mode_tmp(0) = '0') then
-      counter(16) <= '0';
+      counter <= to_unsigned(0, 17);
     end if;
   end process;
 
@@ -231,7 +231,7 @@ begin
 
   o_valid_carry_through : process begin
     wait until rising_edge(i_clock);
-    o_valid_tmp <= stage2_v(3); -- at last part of stage 2, output validity
+    o_valid_tmp <= stage2_v(2); -- at last part of stage 2, output validity
 
     if (stage1_v(3) = '1') then
       last_pixel_stage2 <= not(counter(16));
@@ -330,7 +330,7 @@ begin
   sum2_src2 <= ('0' & (c and (7 downto 0 => stage1_v(0))))
             or ('0' & (g and (7 downto 0 => stage1_v(1))))
            or ('0' & (r7 and (7 downto 0 => stage1_v(2))))
-                  or (r4(8 downto 0) and (8 downto 0 => stage1_v(3)));
+      or (r4(8 downto 0) and (8 downto 0 => stage1_v(3)));
   sum1 <= ('0' & sum1_src1) + ('0' & sum1_src2);
   sum2 <= ('0' & sum2_src1) + ('0' & sum2_src2);
 
@@ -416,8 +416,8 @@ begin
 
 --------------------- END ------------------------
 
-  o_edge_proc: process begin
-    wait until rising_edge(i_clock);
+  o_edge_proc: process(sub2, dir7) begin
+    --wait until rising_edge(i_clock);
     o_edge <= not(sub2(13));
     if (sub2(13) = '1') then
       o_dir <= "000";
@@ -450,10 +450,10 @@ begin
   o_mode(1) <= o_mode_tmp(1);
 
   -- For debugging
-  debug_num_0 <= std_logic_vector(sub2(3 downto 0));
-  debug_num_1 <= std_logic_vector(sub2(7 downto 4));
-  debug_num_2 <= std_logic_vector(sub2(11 downto 8));
-  debug_num_3 <= std_logic_vector("00" & sub2(13 downto 12));
-  debug_num_4 <= std_logic_vector('0' & dir7);
+  -- debug_num_0 <= std_logic_vector(sub2(3 downto 0));
+  -- debug_num_1 <= std_logic_vector(sub2(7 downto 4));
+  -- debug_num_2 <= std_logic_vector(sub2(11 downto 8));
+  -- debug_num_3 <= std_logic_vector("00" & sub2(13 downto 12));
+  -- debug_num_4 <= std_logic_vector('0' & dir7);
   --debug_num_5 <= counter(16) & counter(0) & '0' & '0';
 end architecture;
