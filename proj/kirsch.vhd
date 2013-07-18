@@ -67,6 +67,8 @@ architecture main of kirsch is
          h,    d,
          g, f, e                 : unsigned(7 downto 0);
 
+  signal test_reg                : std_logic_vector(1 downto 0);
+
 --------------------- STAGE1 ------------------------
   signal r1                  : unsigned (8 downto 0);
   signal r2                  : unsigned (8 downto 0);
@@ -107,7 +109,6 @@ architecture main of kirsch is
   signal sub2_src1            : unsigned (12 downto 0);
   signal sub2_src2            : unsigned (12 downto 0);
   signal sub2                 : signed (13 downto 0);
-  signal sub2_13              : std_logic;
   signal sub3_src1            : unsigned (9 downto 0);
   signal sub3_src2            : unsigned (9 downto 0);
   signal sub3                 : signed(10 downto 0);
@@ -218,9 +219,21 @@ begin
     wait until rising_edge(i_clock);
     stage1_v <= stage1_v sll 1;
     stage2_v <= stage2_v sll 1;
+    if (o_mode_tmp(0) = '0') then
+      test_reg(0) <= '0';
+    elsif (counter(9) = '1') then
+      test_reg(0) <= '1';
+    end if;
+    if (o_mode_tmp(0) = '0') then
+      test_reg(1) <= '1';
+    elsif (counter(0) = '1' and i_valid = '1') then
+      test_reg(1) <= not counter(8);
+    end if;
     if (i_reset = '1') then
       stage1_v <= SS0;
-    elsif (i_valid = '1' and counter(7 downto 0) >= 2 and counter(15 downto 8) >= 2) then
+    --elsif (i_valid = '1' and test_reg(1) /= counter(8) and counter(15 downto 8) >= 2) then
+    elsif (i_valid = '1' and test_reg(1) /= counter(8) and test_reg(0) = '1') then
+    --elsif (i_valid = '1' and counter(7 downto 0) >= 2 and test_reg(0) = '1') then
       stage1_v(0) <= '1';
     end if;
     if (i_reset = '1') then
@@ -235,10 +248,10 @@ begin
     o_valid_tmp <= stage2_v(3); -- at last part of stage 2, output validity
 
     if (stage1_v(3) = '1') then
-      last_pixel_stage2 <= not(counter(16));
+      last_pixel_stage2 <= counter(16);
     end if;
     if (stage2_v(3) = '1') then
-      last_pixel_end <= last_pixel_stage2;
+      last_pixel_end <= not(last_pixel_stage2);
     end if;
   end process;
   o_valid <= o_valid_tmp;
@@ -434,7 +447,7 @@ begin
   o_row_proc : process begin
     wait until rising_edge(i_clock);
     if (i_reset = '1') then
-      o_row <= X"00";
+      o_row <= "00000000";
     elsif (i_valid = '1') then
       o_row <= std_logic_vector(counter(15 downto 8));
     end if;
