@@ -419,7 +419,7 @@ begin
 
   o_edge_proc1: process begin
     wait until rising_edge(i_clock);
-    sub2_13 <= sub2(13);
+    o_edge <= not(sub2(13));
     if (sub2(13) = '1') then
       o_dir <= "000";
     else
@@ -427,13 +427,13 @@ begin
     end if;
   end process;
 
-  o_edge_proc2: process(sub2_13, dir7) begin
-    o_edge <= not(sub2_13);
-  end process;
+ -- o_edge_proc2: process(sub2_13, dir7) begin
+ --   o_edge <= not(sub2_13);
+ -- end process;
 
   o_row_proc : process begin
     wait until rising_edge(i_clock);
-    if (o_mode_tmp(0) = '0') then
+    if (i_reset = '1') then
       o_row <= X"00";
     elsif (i_valid = '1') then
       o_row <= std_logic_vector(counter(15 downto 8));
