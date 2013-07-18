@@ -107,6 +107,7 @@ architecture main of kirsch is
   signal sub2_src1            : unsigned (12 downto 0);
   signal sub2_src2            : unsigned (12 downto 0);
   signal sub2                 : signed (13 downto 0);
+  signal sub2_13              : std_logic;
   signal sub3_src1            : unsigned (9 downto 0);
   signal sub3_src2            : unsigned (9 downto 0);
   signal sub3                 : signed(10 downto 0);
@@ -231,7 +232,7 @@ begin
 
   o_valid_carry_through : process begin
     wait until rising_edge(i_clock);
-    o_valid_tmp <= stage2_v(2); -- at last part of stage 2, output validity
+    o_valid_tmp <= stage2_v(3); -- at last part of stage 2, output validity
 
     if (stage1_v(3) = '1') then
       last_pixel_stage2 <= not(counter(16));
@@ -416,14 +417,18 @@ begin
 
 --------------------- END ------------------------
 
-  o_edge_proc: process(sub2, dir7) begin
-    --wait until rising_edge(i_clock);
-    o_edge <= not(sub2(13));
+  o_edge_proc1: process begin
+    wait until rising_edge(i_clock);
+    sub2_13 <= sub2(13);
     if (sub2(13) = '1') then
       o_dir <= "000";
     else
       o_dir <= std_logic_vector(dir7);
     end if;
+  end process;
+
+  o_edge_proc2: process(sub2_13, dir7) begin
+    o_edge <= not(sub2_13);
   end process;
 
   o_row_proc : process begin
