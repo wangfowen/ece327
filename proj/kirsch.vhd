@@ -388,7 +388,7 @@ begin
     r13 <= r13_in;
   end process;
   r13_in <= (r6 and (9 downto 0 => stage1_v(3)))
-       or (sum5 and (9 downto 0 => stage2_v(0)))
+       or (sum5 and (9 downto 0 => not stage1_v(3) and not stage2_v(1) and not stage2_v(2)))
         or (r12 and (9 downto 0 => not stage1_v(3) and not stage2_v(0) and not sub3(10)))
         or (r13 and (9 downto 0 => not stage1_v(3) and not stage2_v(0) and sub3(10)));
 
