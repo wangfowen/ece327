@@ -94,6 +94,7 @@ architecture main of kirsch is
   signal r11                  : unsigned (12 downto 0);
   signal r12                  : unsigned (9 downto 0);
   signal r13                  : unsigned (9 downto 0);
+  signal r13_in               : unsigned (9 downto 0);
 
   signal sum3_src1           : unsigned (12 downto 0);
   signal sum3_src2           : unsigned (11 downto 0);
@@ -384,14 +385,12 @@ begin
 
   r13_proc : process begin
     wait until rising_edge(i_clock);
-    if (stage1_v(3) = '1') then
-      r13 <= r6;
-    elsif (stage2_v(0) = '1') then
-      r13 <= sum5;
-    elsif (sub3(10) = '0') then
-      r13 <= r12;
-    end if;
+    r13 <= r13_in;
   end process;
+  r13_in <= (r6 and (9 downto 0 => stage1_v(3)))
+       or (sum5 and (9 downto 0 => stage2_v(0)))
+        or (r12 and (9 downto 0 => not stage1_v(3) and not stage2_v(0) and not sub3(10)))
+        or (r13 and (9 downto 0 => not stage1_v(3) and not stage2_v(0) and sub3(10)));
 
   sum3_src1 <= "000" & r5 when stage2_v(0) = '1' else
                r11;
