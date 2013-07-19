@@ -67,8 +67,6 @@ architecture main of kirsch is
          h,    d,
          g, f, e                 : unsigned(7 downto 0);
 
-  signal test_reg                : std_logic_vector(1 downto 0);
-
 --------------------- STAGE1 ------------------------
   signal r1                  : unsigned (8 downto 0);
   signal r2                  : unsigned (8 downto 0);
@@ -113,8 +111,6 @@ architecture main of kirsch is
   signal sub3_src2            : unsigned (9 downto 0);
   signal sub3                 : signed(10 downto 0);
 
-  signal dir5                : unsigned (2 downto 0);
-  signal dir6                : unsigned (2 downto 0);
   signal dir7                : unsigned (2 downto 0);
 
 --------------------- ENDVAR ------------------------
@@ -219,21 +215,9 @@ begin
     wait until rising_edge(i_clock);
     stage1_v <= stage1_v sll 1;
     stage2_v <= stage2_v sll 1;
-    if (o_mode_tmp(0) = '0') then
-      test_reg(0) <= '0';
-    elsif (counter(9) = '1') then
-      test_reg(0) <= '1';
-    end if;
-    if (o_mode_tmp(0) = '0') then
-      test_reg(1) <= '1';
-    elsif (counter(0) = '1' and i_valid = '1') then
-      test_reg(1) <= not counter(8);
-    end if;
     if (i_reset = '1') then
-      stage1_v <= SS0;
-    --elsif (i_valid = '1' and test_reg(1) /= counter(8) and counter(15 downto 8) >= 2) then
-    elsif (i_valid = '1' and test_reg(1) /= counter(8) and test_reg(0) = '1') then
-    --elsif (i_valid = '1' and counter(7 downto 0) >= 2 and test_reg(0) = '1') then
+      stage2_v <= SS0;
+    elsif (i_valid = '1' and counter(7 downto 1) >= 1 and counter(15 downto 9) >= 1) then
       stage1_v(0) <= '1';
     end if;
     if (i_reset = '1') then
@@ -251,7 +235,7 @@ begin
       last_pixel_stage2 <= counter(16);
     end if;
     if (stage2_v(3) = '1') then
-      last_pixel_end <= not(last_pixel_stage2);
+      last_pixel_end <= last_pixel_stage2;
     end if;
   end process;
   o_valid <= o_valid_tmp;
@@ -283,11 +267,27 @@ begin
 
   R3_R4_proc : process begin
     wait until rising_edge(i_clock);
+    
     if (stage1_v(2) = '1') then
       r3 <= r5(8 downto 0);
-      r4 <= r6;
-    elsif (stage1_v(1) = '1') then
+    elsif (stage2_v(0) = '1') then
+      if (sub3(10) = '0') then
+        r3(2 downto 0) <= dir(1) & '0' & not(dir(1));
+      else
+        r3(2 downto 0) <= dir(2) & "10";
+      end if;
+    elsif (stage2_v(1) = '1') then
+      if (sub3(10) = '0') then
+        r3(5 downto 3) <= dir(3) & '0' & dir(3);
+      else
+        r3(5 downto 3) <= dir(4) & "11";
+      end if;
+    end if;
+
+    if (stage1_v(1) = '1') then
       r4(7 downto 0) <= r7;
+    elsif (stage1_v(2) = '1') then
+      r4 <= r6;
     elsif (stage2_v(0) = '1') then
       if (sub3(10) = '0') then
         r4 <= r12;
@@ -332,19 +332,20 @@ begin
   sum1_src1 <= '0' & h when stage1_v(0) = '1' else
                '0' & d when stage1_v(1) = '1' else
                r1;
-  sum1_src2 <= ('0' & (a and (7 downto 0 => stage1_v(0))))
-            or ('0' & (e and (7 downto 0 => stage1_v(1))))
-            or ('0' & (r4(7 downto 0) and (7 downto 0 => stage1_v(2))))
-            or (r2 and (8 downto 0 => stage1_v(3)));
+  sum1_src2 <= '0' & a when stage1_v(0) = '1' else
+               '0' & e when stage1_v(1) = '1' else
+               '0' & r4(7 downto 0) when stage1_v(2) = '1' else
+               r2;
 
-  sum2_src1 <= ('0' & (b and (7 downto 0 => stage1_v(0))))
-            or ('0' & (f and (7 downto 0 => stage1_v(1))))
-                  or (r2 and (8 downto 0 => stage1_v(2)))
-                  or (r3 and (8 downto 0 => stage1_v(3)));
-  sum2_src2 <= ('0' & (c and (7 downto 0 => stage1_v(0))))
-            or ('0' & (g and (7 downto 0 => stage1_v(1))))
-           or ('0' & (r7 and (7 downto 0 => stage1_v(2))))
-      or (r4(8 downto 0) and (8 downto 0 => stage1_v(3)));
+  sum2_src1 <= '0' & b when stage1_v(0) = '1' else
+               '0' & f when stage1_v(1) = '1' else
+               r2 when stage1_v(2) = '1' else
+               r3;
+  sum2_src2 <= '0' & c when stage1_v(0) = '1' else
+               '0' & g when stage1_v(1) = '1' else
+               '0' & r7 when stage1_v(2) = '1' else
+               r4(8 downto 0);
+  
   sum1 <= ('0' & sum1_src1) + ('0' & sum1_src2);
   sum2 <= ('0' & sum2_src1) + ('0' & sum2_src2);
 
@@ -356,27 +357,11 @@ begin
 
   dirs_proc: process begin
     wait until rising_edge(i_clock);
-    if (stage2_v(0) = '1') then
-      if (sub3(10) = '0') then
-        dir5 <= dir(1) & '0' & not(dir(1));
-      else
-        dir5 <= dir(2) & "10";
-      end if;
-    end if;
-
-    if (stage2_v(1) = '1') then
-      if (sub3(10) = '0') then
-        dir6 <= dir(3) & '0' & dir(3);
-      else
-        dir6 <= dir(4) & "11";
-      end if;
-    end if;
-
     if (stage2_v(2) = '1') then
       if (sub3(10) = '0') then
-        dir7 <= dir5;
+        dir7 <= r3(2 downto 0); -- old dir5
       else
-        dir7 <= dir6;
+        dir7 <= r3(5 downto 3); -- old dir6
       end if;
     end if;
   end process;
@@ -440,10 +425,6 @@ begin
     end if;
   end process;
 
- -- o_edge_proc2: process(sub2_13, dir7) begin
- --   o_edge <= not(sub2_13);
- -- end process;
-
   o_row_proc : process begin
     wait until rising_edge(i_clock);
     if (i_reset = '1') then
@@ -461,7 +442,7 @@ begin
     elsif (o_mode_tmp(1) = '0') then
       o_mode_tmp(0) <= '0';
     elsif (o_valid_tmp = '1') then
-      o_mode_tmp(0) <= last_pixel_end;
+      o_mode_tmp(0) <= not(last_pixel_end);
     end if;
   end process;
   o_mode(0) <= o_mode_tmp(0);
@@ -473,5 +454,5 @@ begin
   -- debug_num_2 <= std_logic_vector(sub2(11 downto 8));
   -- debug_num_3 <= std_logic_vector("00" & sub2(13 downto 12));
   -- debug_num_4 <= std_logic_vector('0' & dir7);
-  --debug_num_5 <= counter(16) & counter(0) & '0' & '0';
+  -- debug_num_5 <= counter(16) & counter(0) & '0' & '0';
 end architecture;
